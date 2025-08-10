@@ -4,8 +4,11 @@
   "description": "",
   "main": "./src/index.ts",
   "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
     "dev": "nodemon --watch 'src/**/*' -e ts,tsc --exec npx ts-node ./src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed": "ts-node src/config/seeds/index.ts"
   },
   "author": "",
   "license": "ISC",
