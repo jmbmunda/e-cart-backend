@@ -66,21 +66,21 @@ const forgotPassword = async (req: Request, res: Response) => {
     }
 
     const token = nanoid();
-    const expiry = new Date(Date.now() + 3600000).toISOString(); // 1hr
+    const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 1hr
 
     await storeResetTokenQuery(user[0].id, token, expiry);
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "jmmunda26@gmail.com",
+        user: process.env.NODE_MAILER_USER,
         pass: "lezm wehb psbg fazv",
       },
     });
     const webResetLink = `${process.env.BASE_URL}/reset-password/${token}`;
-    const mobileResetLink = "";
+    const mobileResetLink = `${process.env.BASE_URL}/reset-password/${token}`;
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `E-Cart <${process.env.NODE_MAILER_USER}>`,
       to: email,
       subject: "Password Reset",
       text: `We received a request to reset your password. To securely proceed, please select the appropriate link below based on your device:\n\n
@@ -92,7 +92,7 @@ const forgotPassword = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       statusCode: 1,
-      message: "Success! Reset password link has been sent",
+      message: `Success! Reset password link has been sent to ${email}`,
     });
   } catch (error) {
     console.log("Forgot password", error);
@@ -102,17 +102,17 @@ const forgotPassword = async (req: Request, res: Response) => {
 
 const resetPassword = async (req: Request, res: Response) => {
   try {
-    const { resetToken, newPassword } = req.body;
+    const { reset_token, new_password } = req.body;
 
-    const result = await validateResetTokenQuery(resetToken);
+    const result = await validateResetTokenQuery(reset_token);
     if (result.length === 0)
       return res.status(400).json({ statusCode: 0, message: "Invalid token" });
 
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    const hashedPassword = await bcrypt.hash(new_password, salt);
     await resetPasswordQuery(result[0].user_id, hashedPassword);
 
-    await setTokenStatusQuery(resetToken);
+    await setTokenStatusQuery(reset_token);
 
     return res.status(200).json({
       statusCode: 1,

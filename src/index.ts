@@ -2,17 +2,22 @@ import express from "express";
 import helmet from "helmet";
 import productsRouter from "./routers/products";
 import authRouter from "./routers/auth";
+import dotenv from "dotenv";
+import { globalLimiter } from "./middlewares/rateLimit";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(helmet());
 app.use(express.json());
+app.use(globalLimiter);
 app.use("/api/v1/products", productsRouter);
 app.use("/api/v1/auth", authRouter);
 
 app.get("/api/v1", (req, res) => {
-  res.status(200).json({ message: "Success sdsd " });
+  res.status(200).json({ message: "Success!" });
 });
 
 app.listen(PORT, () => {

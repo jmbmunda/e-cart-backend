@@ -5,14 +5,10 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   const bearerToken = req.headers["authorization"];
   const token = bearerToken?.split(" ")[1];
 
-  if (!token)
-    return res
-      .status(401)
-      .json({ statusCode: 0, message: "Token not provided" });
+  if (!token) return res.status(401).json({ statusCode: 0, message: "Token not provided" });
 
   try {
-    // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!); // will throw an error if invalid
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
     (req as any).user = decoded;
 
     next();

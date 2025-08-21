@@ -14,12 +14,8 @@ export const registerQuery = async (user: UserType) => {
 
 export const loginQuery = async () => {};
 
-// STORE PASSWORD RESET TOKEN
-export const storeResetTokenQuery = async (
-  userId: string,
-  token: string,
-  expiry: string
-) => {
+// STORE PASSWORD RESET TOKEN (upsert pattern)
+export const storeResetTokenQuery = async (userId: string, token: string, expiry: string) => {
   const { rows } = await pool.query(
     `INSERT INTO password_reset_tokens (user_id, token, expires_at) 
     VALUES ($1, $2, $3) 
@@ -43,10 +39,7 @@ export const validateResetTokenQuery = async (token: string) => {
   return rows;
 };
 
-export const resetPasswordQuery = async (
-  userId: string,
-  newPassword: string
-) => {
+export const resetPasswordQuery = async (userId: string, newPassword: string) => {
   const { rows } = await pool.query(
     `UPDATE users 
     SET password = $1 

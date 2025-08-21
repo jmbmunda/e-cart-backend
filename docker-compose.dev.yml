@@ -8,6 +8,36 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    depends_on:
+      - db
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
       - PORT=${PORT}
+
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  dbmate:
+    image: amacneil/dbmate
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ./db/migrations:/db/migrations
+
+volumes:
+  pgdata:

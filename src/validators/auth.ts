@@ -32,9 +32,9 @@ const login = [
 const forgotPassword = [check("email", "Email is required").notEmpty()];
 
 const resetPassword = [
-  check("resetToken", "Reset Token is required").notEmpty(),
-  check("newPassword", "New Password is required").notEmpty(),
-  check("newPassword", "Must be at least 8 characters long").isLength({
+  check("reset_token", "Reset Token is required").notEmpty(),
+  check("new_password", "New Password is required").notEmpty(),
+  check("new_password", "Must be at least 8 characters long").isLength({
     min: 8,
   }),
 ];

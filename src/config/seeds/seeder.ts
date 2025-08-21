@@ -10,3 +10,5 @@ ON CONFLICT (email) DO NOTHING;`);
 };
 
 export default { users };
+
+// TODO: use migration (node-pg-migrate)
