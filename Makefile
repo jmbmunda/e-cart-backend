@@ -27,7 +27,7 @@ rollback:
 status:
 	docker-compose -f docker-compose.dev.yml run --rm dbmate status
 
-new:
+migrate-new:
 	@echo "Enter migration name:" && read name && \
 	docker-compose -f docker-compose.dev.yml run --rm dbmate new $$name
 

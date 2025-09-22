@@ -16,6 +16,16 @@ services:
       - NODE_ENV=development
       - PORT=${PORT}
 
+  worker:
+    build: .
+    command: ["npm", "run", "start:worker"]
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+
   db:
     image: postgres:15
     restart: unless-stopped

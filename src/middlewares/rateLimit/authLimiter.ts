@@ -2,7 +2,7 @@ import { createLimiter } from ".";
 
 export const loginLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 10,
   message: {
     status: 429,
     error: "Too many login attempts",

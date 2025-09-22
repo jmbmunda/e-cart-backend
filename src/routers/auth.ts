@@ -18,6 +18,7 @@ router.post(
   validateRequest,
   authController.register
 );
+
 router.post("/login", loginLimiter, authValidator.login, validateRequest, authController.login);
 
 router.post(

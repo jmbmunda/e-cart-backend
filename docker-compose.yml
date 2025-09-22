@@ -5,6 +5,45 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${PORT}:${PORT}"
+    env_file:
+      - .env.production
     environment:
       NODE_ENV: production
       PORT: ${PORT}
+    depends_on:
+      - db
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start:worker"]
+    environment:
+      NODE_ENV: production
+    env_file:
+      - .env.production
+    depends_on:
+      - db
+  
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  migrate:
+    image: amacneil/dbmate
+    env_file:
+      - .env.production
+    command: ["up"]
+    volumes:
+      - ./db/migrations:/db/migrations
+    depends_on:
+      - db
+      
+volumes:
+  pgdata:
