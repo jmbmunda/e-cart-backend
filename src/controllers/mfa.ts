@@ -56,11 +56,11 @@ const mfaVerify = async (req: Request, res: Response) => {
     const id = tempToken.decoded?.id;
     const user = await findUserByIdQuery(id!, true);
 
-    if (!user.length) return res.status(404).json({ statusCode: 0, message: "User not found" });
     if (tempToken.expired)
       return res
         .status(401)
         .json({ statusCode: 0, message: "Session expired, please login again." });
+    if (!user.length) return res.status(404).json({ statusCode: 0, message: "User not found" });
 
     const { status, json } = await verifyMfa({
       userId: user[0].id!,
@@ -86,11 +86,11 @@ const otpSend = async (req: Request, res: Response) => {
     const id = tempToken.decoded?.id;
     const user = await findUserByIdQuery(id!, true);
 
-    if (!user.length) return res.status(404).json({ statusCode: 0, message: "User not found" });
     if (tempToken.expired)
       return res
         .status(401)
         .json({ statusCode: 0, message: "Session expired, please login again." });
+    if (!user.length) return res.status(404).json({ statusCode: 0, message: "User not found" });
 
     const { status, json } = await sendOTPCode({
       userId: user[0].id!,

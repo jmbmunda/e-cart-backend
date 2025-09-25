@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
+import { nanoid } from "nanoid";
 
 export const generateOtp = () => {
   return crypto.randomInt(100000, 999999).toString();
@@ -57,4 +58,10 @@ export const sendEmail = async (emailConfig: {
   } catch (error) {
     throw error;
   }
+};
+
+export const generateSKU = (name: string): string => {
+  const prefix = name.substring(0, 3).toUpperCase();
+  const unique = nanoid(6).toUpperCase();
+  return `${prefix}-${unique}`;
 };

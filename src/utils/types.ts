@@ -1,15 +1,21 @@
 export type ProductType = {
+  sku: string;
   name: string;
   description: string;
   price: number;
   stock: number;
+  category: string;
+  thumbnail: string;
 };
 
 export type FiltersType = {
-  min_price: number;
-  max_price: number;
-  sortBy: "name" | "price" | "created_at";
-  order: "asc" | "desc";
+  q?: string;
+  min_price?: number;
+  max_price?: number;
+  sort_by?: "name" | "price" | "created_at";
+  order?: "asc" | "desc";
+  page?: number;
+  limit?: number;
 };
 
 export type BaseUserType = {

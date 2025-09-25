@@ -24,6 +24,9 @@ migrate:
 rollback:
 	docker-compose -f docker-compose.dev.yml run --rm dbmate down
 
+seed:
+	docker-compose -f docker-compose.dev.yml run --rm backend npx ts-node db/seeders/index.ts
+
 status:
 	docker-compose -f docker-compose.dev.yml run --rm dbmate status
 
