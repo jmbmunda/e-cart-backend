@@ -21,19 +21,19 @@ const getFields = (includeSensitive: boolean = false) => {
 export const findUserByIdQuery = async <T extends boolean = false>(
   id: string,
   includeSensitive?: T
-): Promise<UserType<T>[]> => {
+): Promise<UserType<T>> => {
   const fields = getFields(includeSensitive);
   const { rows } = await pool.query(`SELECT ${fields.join(", ")} FROM users WHERE id = $1`, [id]);
-  return rows;
+  return rows[0];
 };
 
 export const findUserByEmailQuery = async <T extends boolean = false>(
   email: string,
   includeSensitive?: T
-): Promise<UserType<T>[]> => {
+): Promise<UserType<T>> => {
   const fields = getFields(includeSensitive);
   const { rows } = await pool.query(`SELECT ${fields} FROM users WHERE email = $1`, [email]);
-  return rows;
+  return rows[0];
 };
 
 export const updateInformationQuery = async () => {};

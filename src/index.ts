@@ -3,8 +3,10 @@ import helmet from "helmet";
 import productsRouter from "./routers/products";
 import authRouter from "./routers/auth";
 import mfaRouter from "./routers/mfa";
+import categoriesRouter from "./routers/categories";
 import dotenv from "dotenv";
 import { globalLimiter } from "./middlewares/rateLimit";
+import { errorHandler } from "./middlewares/errorHandler";
 
 dotenv.config();
 
@@ -17,6 +19,9 @@ app.use(globalLimiter);
 app.use("/api/v1/products", productsRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/mfa", mfaRouter);
+app.use("/api/v1/categories", categoriesRouter);
+
+app.use(errorHandler);
 
 app.get("/api/v1", (req, res) => {
   res.status(200).json({ message: "Success!" });

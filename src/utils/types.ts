@@ -1,3 +1,8 @@
+export type PaginationType = {
+  page?: number;
+  limit?: number;
+};
+
 export type ProductType = {
   sku: string;
   name: string;
@@ -8,15 +13,28 @@ export type ProductType = {
   thumbnail: string;
 };
 
-export type FiltersType = {
+export type CategoryType = {
+  id?: string;
+  name: string;
+  slug: string;
+  is_active?: boolean;
+  thumbnail?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ProductFiltersType = {
   q?: string;
   min_price?: number;
   max_price?: number;
   sort_by?: "name" | "price" | "created_at";
   order?: "asc" | "desc";
-  page?: number;
-  limit?: number;
-};
+} & PaginationType;
+
+export type CategoriesFiltersType = {
+  is_active?: boolean;
+  order?: "asc" | "desc";
+} & PaginationType;
 
 export type BaseUserType = {
   id?: string;

@@ -1,8 +1,8 @@
 import pool from "../config/db";
 import { ALLOWED_ORDERS, ALLOWED_PRODUCT_SORT_FIELDS } from "../utils/constants";
-import { FiltersType, ProductType } from "../utils/types";
+import { ProductFiltersType, ProductType } from "../utils/types";
 
-export const getProductsQuery = async (filters: FiltersType) => {
+export const getProductsQuery = async (filters: ProductFiltersType) => {
   const { q, min_price, max_price, sort_by, order = "desc", page = 1, limit = 10 } = filters;
   let query = `SELECT * FROM products WHERE 1=1`;
   const queryParams: any[] = [];
@@ -29,22 +29,35 @@ export const getProductsQuery = async (filters: FiltersType) => {
   return rows;
 };
 
-export const getProductQuery = async (id: string) => {
+export const getProductByIdQuery = async (id: string) => {
   const { rows } = await pool.query(
     `SELECT p.*,
-    COALESCE(
+    (SELECT COALESCE(
     json_agg(
       json_build_object(
         'id', pi.id, 'url', pi.url, 'is_thumbnail', pi.is_thumbnail
       )    
-    ) FILTER (WHERE pi.id IS NOT NULL), '[]') as images
+    ), '[]')  
+    FROM product_images pi
+    WHERE pi.product_id = p.id) AS images,
+    (SELECT COALESCE(
+      json_agg(
+        json_build_object('id', c.id, 'name', c.name, 'slug', c.slug)
+      ), '[]')
+      FROM product_categories pc
+      JOIN categories c ON c.id = pc.category_id
+      WHERE pc.product_id = p.id
+    ) AS categories
     FROM products p
-    LEFT JOIN product_images pi ON pi.product_id = p.id 
     WHERE p.id = $1 GROUP BY p.id`,
     [id]
   );
-  return rows;
+  return rows[0];
 };
+
+// LEFT JOIN product_images pi ON pi.product_id = p.id
+// LEFT JOIN product_categories pc ON pc.product_id = p.id
+// LEFT JOIN categories c ON c.id = pc.category_id
 
 export const addProductQuery = async ({
   sku,
@@ -72,6 +85,6 @@ export const editProductQuery = async (id: string, data: ProductType) => {
 };
 
 export const deleteProductQuery = async (id: string) => {
-  const { rows } = await pool.query("DELETE FROM products WHERE id = $1 RETURNING id", [id]);
+  const { rows } = await pool.query("DELETE FROM products WHERE id = $1", [id]);
   return rows;
 };

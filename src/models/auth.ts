@@ -9,7 +9,7 @@ export const registerQuery = async (user: UserType<true>) => {
     RETURNING *`,
     [name, email, mobile_number, profile_picture, password]
   );
-  return rows;
+  return rows[0];
 };
 
 export const loginQuery = async () => {};

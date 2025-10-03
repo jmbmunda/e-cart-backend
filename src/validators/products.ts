@@ -27,7 +27,7 @@ const getProducts = [
   query("sort_by")
     .optional()
     .isIn(ALLOWED_PRODUCT_SORT_FIELDS)
-    .withMessage(`sory_by must be one of ${ALLOWED_PRODUCT_SORT_FIELDS.join(", ")}`),
+    .withMessage(`sort_by must be one of ${ALLOWED_PRODUCT_SORT_FIELDS.join(", ")}`),
   query("order")
     .optional()
     .toUpperCase()

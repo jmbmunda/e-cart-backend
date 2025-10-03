@@ -2,6 +2,7 @@ import crypto from "crypto";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
 import { nanoid } from "nanoid";
+import { Response } from "express";
 
 export const generateOtp = () => {
   return crypto.randomInt(100000, 999999).toString();
@@ -64,4 +65,26 @@ export const generateSKU = (name: string): string => {
   const prefix = name.substring(0, 3).toUpperCase();
   const unique = nanoid(6).toUpperCase();
   return `${prefix}-${unique}`;
+};
+
+export const sendSuccess = (
+  res: Response,
+  message: string = "Success",
+  data: any = undefined,
+  status = 200,
+  statusCode = 1,
+  meta: Record<string, any> = {}
+) => {
+  return res.status(status).json({ statusCode, message, ...meta, data });
+};
+
+export const sendError = (
+  res: Response,
+  message: string = "Something went wrong",
+  error: any = undefined,
+  status = 500,
+  statusCode = 0,
+  meta: Record<string, any> = {}
+) => {
+  return res.status(status).json({ statusCode, message, ...meta, error });
 };
