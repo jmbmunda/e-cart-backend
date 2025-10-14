@@ -7,19 +7,27 @@ import categoriesRouter from "./routers/categories";
 import dotenv from "dotenv";
 import { globalLimiter } from "./middlewares/rateLimit";
 import { errorHandler } from "./middlewares/errorHandler";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { config } from "./config/env.config";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.app.port;
+const API_VERSION = config.app.api_version;
 
 app.use(helmet());
-app.use(express.json());
 app.use(globalLimiter);
-app.use("/api/v1/products", productsRouter);
-app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/mfa", mfaRouter);
-app.use("/api/v1/categories", categoriesRouter);
+app.use(cookieParser());
+app.use(cors({ origin: config.app.cors_origin || true, credentials: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.use(`/api/${API_VERSION}/products`, productsRouter);
+app.use(`/api/${API_VERSION}/auth`, authRouter);
+app.use(`/api/${API_VERSION}/mfa`, mfaRouter);
+app.use(`/api/${API_VERSION}/categories`, categoriesRouter);
 
 app.use(errorHandler);
 

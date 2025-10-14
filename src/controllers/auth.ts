@@ -12,29 +12,49 @@ import {
   emailPasswordReset,
   generateJwtToken,
   hashPassword,
-  isPasswordValid,
+  compareHash,
+  verifyJwtToken,
+  rotateRefreshToken,
 } from "../services/authService";
 import { mapUserToResponse } from "../mappers/userMapper";
 import { asyncHandler } from "../middlewares/asyncHandler";
 import { sendError, sendSuccess } from "../utils/helper";
+import { config } from "../config/env.config";
 
 const register = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
+
   const user = await findUserByEmailQuery(email);
   if (user) return sendError(res, "User already exists", undefined, 400);
+
   const hashedPassword = await hashPassword(password);
   const values = { ...req.body, password: hashedPassword };
   const registerData = await registerQuery(values);
+
   const data = mapUserToResponse(registerData);
-  return sendSuccess(res, "Account created", data, 201);
+  const token = generateJwtToken(data.id);
+
+  const result = await rotateRefreshToken(data.id!);
+  if (typeof result !== "string") {
+    return sendError(res, result.message, undefined, result.statusCode);
+  }
+
+  res.cookie("refresh_token", result, {
+    httpOnly: true,
+    secure: config.app.node_env === "production",
+  });
+  return sendSuccess(res, "Account created", data, 201, 1, { token });
 });
 
 const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
+
   const user = await findUserByEmailQuery(email, true);
   if (!user) return sendError(res, "Account does not exist", undefined, 400);
-  const isValid = isPasswordValid(password, user.password!);
+
+  const isValid = compareHash(password, user.password!);
   if (!isValid) return sendError(res, "Wrong password", undefined, 400);
+
   if (user.is_mfa_enabled) {
     const temporary_token = generateJwtToken(user.id!, "5m");
     return sendSuccess(
@@ -46,8 +66,19 @@ const login = asyncHandler(async (req: Request, res: Response) => {
       { temporary_token, mfa_method: user.mfa_method }
     );
   }
+
   const token = generateJwtToken(user.id!);
   const data = mapUserToResponse(user);
+
+  const result = await rotateRefreshToken(data.id!);
+  if (typeof result !== "string") {
+    return sendError(res, result.message, undefined, result.statusCode);
+  }
+
+  res.cookie("refresh_token", result, {
+    httpOnly: true,
+    secure: config.app.node_env === "production",
+  });
   return sendSuccess(res, "Logged In Successfully", data, 200, 1, { token });
 });
 
@@ -72,4 +103,30 @@ const resetPassword = asyncHandler(async (req: Request, res: Response) => {
   return sendError(res, "Password has been updated successfully");
 });
 
-export default { register, login, forgotPassword, resetPassword };
+const refreshToken = asyncHandler(async (req: Request, res: Response) => {
+  const { refresh_token } = req.cookies;
+
+  if (!refresh_token) return sendError(res, "No refresh token found", undefined, 401);
+
+  const { isValid, expired, decoded } = verifyJwtToken(refresh_token);
+  if (!isValid) return sendError(res, "Invalid refresh token", undefined, 401);
+  if (expired) return sendError(res, "Refresh token has expired", undefined, 401);
+
+  const userId = decoded?.id;
+  const token = generateJwtToken(userId!);
+
+  // TODO: Separate this into service
+
+  const result = await rotateRefreshToken(userId!);
+  if (typeof result !== "string") {
+    return sendError(res, result.message, undefined, result.statusCode);
+  }
+
+  res.cookie("refresh_token", result, {
+    httpOnly: true,
+    secure: config.app.node_env === "production",
+  });
+  return sendSuccess(res, "Token refreshed", undefined, 200, 1, { token });
+});
+
+export default { register, login, forgotPassword, resetPassword, refreshToken };

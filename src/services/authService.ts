@@ -1,14 +1,22 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
+import {
+  getRefreshTokenByUserIdQuery,
+  revokeRefreshTokenQuery,
+  storeRefreshTokenQuery,
+} from "../models/auth";
+import { config } from "../config/env.config";
 
 export const generateJwtToken = (id: string, expiresIn: string = "1h") => {
-  return jwt.sign({ id }, process.env.JWT_SECRET!, { expiresIn });
+  return jwt.sign({ id }, config.token.secret!, {
+    expiresIn: config.token.access_expiry || expiresIn,
+  });
 };
 
 export const verifyJwtToken = (token: string) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as jwt.JwtPayload & { id?: string };
+    const decoded = jwt.verify(token, config.token.secret!) as jwt.JwtPayload & { id?: string };
     return { isValid: true, expired: false, decoded };
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
@@ -19,8 +27,8 @@ export const verifyJwtToken = (token: string) => {
   }
 };
 
-export const isPasswordValid = async (password: string, hashedPassword: string) => {
-  return await bcrypt.compare(password, hashedPassword);
+export const compareHash = async (value: string, hashedValue: string) => {
+  return await bcrypt.compare(value, hashedValue);
 };
 
 export const hashPassword = async (password: string, saltLength: number = 10) => {
@@ -42,14 +50,14 @@ export const emailPasswordReset = async (
   const transporter = nodemailer.createTransport({
     service: emailConfig?.service ?? "gmail",
     auth: {
-      user: process.env.NODE_MAILER_USER,
-      pass: process.env.NODE_MAILER_PASS,
+      user: config.mailer.user,
+      pass: config.mailer.pass,
     },
   });
-  const webResetLink = `${process.env.BASE_URL}/reset-password/${token}`;
-  const mobileResetLink = `${process.env.BASE_URL}/reset-password/${token}`;
+  const webResetLink = `${config.mailer.base_url}/reset-password/${token}`;
+  const mobileResetLink = `${config.mailer.base_url}/reset-password/${token}`;
   await transporter.sendMail({
-    from: emailConfig?.from ?? `E-Cart <${process.env.NODE_MAILER_USER}>`,
+    from: emailConfig?.from ?? `E-Cart <${config.mailer.user}>`,
     to: email,
     subject: emailConfig?.subject ?? "Password Reset",
     text:
@@ -61,3 +69,32 @@ export const emailPasswordReset = async (
         `,
   });
 };
+
+export const generateSaveRefreshToken = async (userId: string) => {
+  // const token = generateRandomToken();
+  const token = generateJwtToken(userId, "7d");
+  const hashedToken = await bcrypt.hash(token, 10);
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+  await storeRefreshTokenQuery(userId, hashedToken, expiresAt);
+  return token;
+};
+
+export const rotateRefreshToken = async (userId: string) => {
+  const row = await getRefreshTokenByUserIdQuery(userId!);
+
+  if (row?.is_revoked) {
+    return { statusCode: 401, message: "Refresh token is already used or revoked" };
+  }
+
+  if (row?.expires_at < Date.now()) {
+    return { statusCode: 401, message: "Refresh token has expired" };
+  }
+
+  if (row?.id) await revokeRefreshTokenQuery(row.id);
+
+  const newRefreshToken = await generateSaveRefreshToken(userId!);
+  return newRefreshToken;
+};
+
+// MAIN SERVICES (login ,register , refresh token, etc.)

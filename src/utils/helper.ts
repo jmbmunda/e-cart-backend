@@ -3,9 +3,20 @@ import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
 import { nanoid } from "nanoid";
 import { Response } from "express";
+import { config } from "../config/env.config";
 
 export const generateOtp = () => {
   return crypto.randomInt(100000, 999999).toString();
+};
+
+export const generateSKU = (name: string): string => {
+  const prefix = name.substring(0, 3).toUpperCase();
+  const unique = nanoid(6).toUpperCase();
+  return `${prefix}-${unique}`;
+};
+
+export const generateRandomToken = (length: number = 64) => {
+  return crypto.randomBytes(length).toString("hex");
 };
 
 export const hashSecret = async (secret: string) => {
@@ -46,12 +57,12 @@ export const sendEmail = async (emailConfig: {
     const transporter = nodemailer.createTransport({
       service: emailConfig?.service ?? "gmail",
       auth: {
-        user: process.env.NODE_MAILER_USER,
-        pass: process.env.NODE_MAILER_PASS,
+        user: config.mailer.user,
+        pass: config.mailer.pass,
       },
     });
     await transporter.sendMail({
-      from: emailConfig?.from ?? `E-Cart <${process.env.NODE_MAILER_USER}>`,
+      from: emailConfig?.from ?? `E-Cart <${config.mailer.user}>`,
       to: emailConfig.emailRecipient,
       subject: emailConfig.subject,
       text: emailConfig.text,
@@ -59,12 +70,6 @@ export const sendEmail = async (emailConfig: {
   } catch (error) {
     throw error;
   }
-};
-
-export const generateSKU = (name: string): string => {
-  const prefix = name.substring(0, 3).toUpperCase();
-  const unique = nanoid(6).toUpperCase();
-  return `${prefix}-${unique}`;
 };
 
 export const sendSuccess = (

@@ -35,3 +35,12 @@ export const passwordResetLimiter = createLimiter({
     error: "Too many password reset requests",
   },
 });
+
+export const refreshTokenLimiter = createLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 5,
+  message: {
+    status: 429,
+    error: "Too many refresh token requests",
+  },
+});

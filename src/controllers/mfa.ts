@@ -1,12 +1,11 @@
 import { Request, Response } from "express";
 import { deactivateMfa, activateMfa, disableMfa, verifyMfa, sendOTPCode } from "../services/mfa";
 import { findUserByEmailQuery, findUserByIdQuery } from "../models/user";
-import { generateJwtToken, verifyJwtToken } from "../services/authService";
+import { generateJwtToken, rotateRefreshToken, verifyJwtToken } from "../services/authService";
 import { mapUserToResponse } from "../mappers/userMapper";
 import { asyncHandler } from "../middlewares/asyncHandler";
 import { sendError, sendSuccess } from "../utils/helper";
-
-// TODO: add refresh token
+import { config } from "../config/env.config";
 
 const mfaSetup = asyncHandler(async (req: Request, res: Response) => {
   const { email, is_mfa_enabled, mfa_method } = req.body;
@@ -64,6 +63,16 @@ const mfaVerify = asyncHandler(async (req: Request, res: Response) => {
 
   const token = generateJwtToken(user.id!);
   const data = mapUserToResponse(user);
+
+  const result = await rotateRefreshToken(user.id!);
+  if (typeof result !== "string") {
+    return sendError(res, result.message, undefined, result.statusCode);
+  }
+
+  res.cookie("refresh_token", result, {
+    httpOnly: true,
+    secure: config.app.node_env === "production",
+  });
   return sendSuccess(res, "Authenticated", data, 200, 1, { token });
 });
 

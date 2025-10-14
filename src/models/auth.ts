@@ -60,3 +60,37 @@ export const setTokenStatusQuery = async (token: string) => {
   );
   return rows;
 };
+
+export const storeRefreshTokenQuery = async (
+  userId: string,
+  refreshToken: string,
+  expiresAt: Date,
+  isRevoked: boolean = false
+) => {
+  const { rows } = await pool.query(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at, is_revoked) 
+    VALUES ($1, $2, $3, $4) 
+    RETURNING *`,
+    [userId, refreshToken, expiresAt, isRevoked]
+  );
+  return rows[0];
+};
+
+export const getRefreshTokenByUserIdQuery = async (userId: string) => {
+  const { rows } = await pool.query(
+    `SELECT * FROM refresh_tokens WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
+    [userId]
+  );
+  return rows[0];
+};
+
+export const revokeRefreshTokenQuery = async (id: string, isRevoked: boolean = true) => {
+  const { rows } = await pool.query(
+    `UPDATE refresh_tokens 
+    SET is_revoked = $2 
+    WHERE id = $1 
+    RETURNING *`,
+    [id, isRevoked]
+  );
+  return rows;
+};

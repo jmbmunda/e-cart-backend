@@ -1,5 +1,6 @@
 import { saveOTPCode } from ".";
 import pool from "../../config/db";
+import { config } from "../../config/env.config";
 import {
   getOtpByUserIdQuery,
   updateMfaMethodQuery,
@@ -7,7 +8,6 @@ import {
   updateOtpStatusQuery,
   verifyOtpQuery,
 } from "../../models/mfa";
-import { OTP_DURATION_MINUTES } from "../../utils/constants";
 import { generateOtp } from "../../utils/helper";
 import { generateJwtToken } from "../authService";
 
@@ -88,6 +88,8 @@ const verify = async (userId: string, otp: string) => {
 };
 
 const send = async (userId: string, to: string) => {
+  const OTP_DURATION_MINUTES = config.otp.duration_ms;
+
   try {
     const temporary_token = generateJwtToken(userId, `${OTP_DURATION_MINUTES}m`);
     const validOtps = await getOtpByUserIdQuery(userId);
@@ -95,9 +97,9 @@ const send = async (userId: string, to: string) => {
       const otp = generateOtp();
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
       // NOTE: add send sms fcunctionality here
+      //  Deferred (needs subscription)
       return await saveOTPCode({ userId, tempToken: temporary_token, otp, expiresAt });
     }
-
     return {
       status: 200,
       json: {

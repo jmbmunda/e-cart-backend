@@ -6,6 +6,7 @@ import {
   forgotPasswordLimiter,
   loginLimiter,
   passwordResetLimiter,
+  refreshTokenLimiter,
   registerLimiter,
 } from "../middlewares/rateLimit";
 
@@ -36,5 +37,7 @@ router.post(
   validateRequest,
   authController.resetPassword
 );
+
+router.post("/refresh", refreshTokenLimiter, authController.refreshToken);
 
 export default router;

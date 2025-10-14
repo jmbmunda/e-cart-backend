@@ -8,7 +8,7 @@ import {
   updateMfaStatusQuery,
 } from "../../models/mfa";
 import { generateJwtToken } from "../authService";
-import { OTP_DURATION_MINUTES } from "../../utils/constants";
+import { config } from "../../config/env.config";
 
 const enable = async (id: string, email: string, mfa_secret: string) => {
   try {
@@ -64,6 +64,8 @@ const verify = (otp: string, secret: string) => {
 };
 
 const send = async (userId: string) => {
+  const OTP_DURATION_MINUTES = config.otp.duration_ms;
+
   try {
     const temporary_token = generateJwtToken(userId, `${OTP_DURATION_MINUTES}m`);
     return {

@@ -1,8 +1,6 @@
 import rateLimit from "express-rate-limit";
 import { Options } from "express-rate-limit";
-
-const GLOBAL_LIMIT_MINUTES = 15 * 60 * 1000; // 15
-const GLOBAL_LIMIT_MAX = 1000;
+import { config } from "../../config/env.config";
 
 type LimiterOptions = {} & Partial<Options>;
 
@@ -11,7 +9,7 @@ export const createLimiter = (options: LimiterOptions) => {
     ...options,
     standardHeaders: true,
     legacyHeaders: false,
-    handler: (req, res, next, options) => {
+    handler: (_req, res, _next, options) => {
       const minutes = Math.ceil(options.windowMs / (60 * 1000));
       const unit = `minute${minutes > 1 ? "s" : ""}`;
 
@@ -31,8 +29,8 @@ export const createLimiter = (options: LimiterOptions) => {
 };
 
 export const globalLimiter = createLimiter({
-  windowMs: GLOBAL_LIMIT_MINUTES,
-  max: GLOBAL_LIMIT_MAX,
+  windowMs: Number(config.rate_limit.window_ms),
+  max: Number(config.rate_limit.max_requests),
   message: "Too many requests",
 });
 

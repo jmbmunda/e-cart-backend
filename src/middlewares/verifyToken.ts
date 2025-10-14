@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { config } from "../config/env.config";
 
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   const bearerToken = req.headers["authorization"];
@@ -8,7 +9,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   if (!token) return res.status(401).json({ statusCode: 0, message: "Token not provided" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded = jwt.verify(token, config.token.secret!);
     (req as any).user = decoded;
 
     next();
