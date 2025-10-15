@@ -6,7 +6,13 @@ import verifyToken from "../middlewares/verifyToken";
 
 const router = express.Router();
 
-router.get("/", verifyToken, productsController.getProducts);
+router.get(
+  "/",
+  verifyToken,
+  productValidator.getProducts,
+  validateRequest,
+  productsController.getProducts
+);
 router.get("/:id", verifyToken, productsController.getProductById);
 router.post(
   "/add",

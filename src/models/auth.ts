@@ -1,25 +1,21 @@
 import pool from "../config/db";
 import { UserType } from "../utils/types";
 
-export const registerQuery = async (user: UserType) => {
-  const { name, email, profile_picture, password } = user;
+export const registerQuery = async (user: UserType<true>) => {
+  const { name, email, mobile_number, profile_picture, password } = user;
   const { rows } = await pool.query(
-    `INSERT INTO users (name, email, profile_picture, password) 
-    VALUES ($1, $2, $3, $4) 
+    `INSERT INTO users (name, email, mobile_number, profile_picture, password) 
+    VALUES ($1, $2, $3, $4, $5) 
     RETURNING *`,
-    [name, email, profile_picture, password]
+    [name, email, mobile_number, profile_picture, password]
   );
-  return rows;
+  return rows[0];
 };
 
 export const loginQuery = async () => {};
 
-// STORE PASSWORD RESET TOKEN
-export const storeResetTokenQuery = async (
-  userId: string,
-  token: string,
-  expiry: string
-) => {
+// STORE PASSWORD RESET TOKEN (upsert pattern)
+export const storeResetTokenQuery = async (userId: string, token: string, expiry: string) => {
   const { rows } = await pool.query(
     `INSERT INTO password_reset_tokens (user_id, token, expires_at) 
     VALUES ($1, $2, $3) 
@@ -43,10 +39,7 @@ export const validateResetTokenQuery = async (token: string) => {
   return rows;
 };
 
-export const resetPasswordQuery = async (
-  userId: string,
-  newPassword: string
-) => {
+export const resetPasswordQuery = async (userId: string, newPassword: string) => {
   const { rows } = await pool.query(
     `UPDATE users 
     SET password = $1 
@@ -64,6 +57,40 @@ export const setTokenStatusQuery = async (token: string) => {
     WHERE token = $1 
     RETURNING *`,
     [token]
+  );
+  return rows;
+};
+
+export const storeRefreshTokenQuery = async (
+  userId: string,
+  refreshToken: string,
+  expiresAt: Date,
+  isRevoked: boolean = false
+) => {
+  const { rows } = await pool.query(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at, is_revoked) 
+    VALUES ($1, $2, $3, $4) 
+    RETURNING *`,
+    [userId, refreshToken, expiresAt, isRevoked]
+  );
+  return rows[0];
+};
+
+export const getRefreshTokenByUserIdQuery = async (userId: string) => {
+  const { rows } = await pool.query(
+    `SELECT * FROM refresh_tokens WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
+    [userId]
+  );
+  return rows[0];
+};
+
+export const revokeRefreshTokenQuery = async (id: string, isRevoked: boolean = true) => {
+  const { rows } = await pool.query(
+    `UPDATE refresh_tokens 
+    SET is_revoked = $2 
+    WHERE id = $1 
+    RETURNING *`,
+    [id, isRevoked]
   );
   return rows;
 };

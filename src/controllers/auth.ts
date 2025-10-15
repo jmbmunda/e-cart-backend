@@ -7,148 +7,126 @@ import {
   storeResetTokenQuery,
   validateResetTokenQuery,
 } from "../models/auth";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
 import { nanoid } from "nanoid";
+import {
+  emailPasswordReset,
+  generateJwtToken,
+  hashPassword,
+  compareHash,
+  verifyJwtToken,
+  rotateRefreshToken,
+} from "../services/authService";
+import { mapUserToResponse } from "../mappers/userMapper";
+import { asyncHandler } from "../middlewares/asyncHandler";
+import { sendError, sendSuccess } from "../utils/helper";
+import { config } from "../config/env.config";
 
-const register = async (req: Request, res: Response) => {
-  try {
-    const { name, email, profile_picture, password } = req.body;
-    // Check if user already exists
-    const result = await findUserByEmailQuery(email);
-    if (result.length) {
-      return res
-        .status(400)
-        .json({ statusCode: 0, message: "User already exists" });
-    }
-    // hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    // Perform a query
-    const values = { name, profile_picture, email, password: hashedPassword };
-    const data = await registerQuery(values);
-    return res
-      .status(201)
-      .json({ statusCode: 1, message: "Account created", data });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ statusCode: 0, message: "Something went wrong", error });
+const register = asyncHandler(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  const user = await findUserByEmailQuery(email);
+  if (user) return sendError(res, "User already exists", undefined, 400);
+
+  const hashedPassword = await hashPassword(password);
+  const values = { ...req.body, password: hashedPassword };
+  const registerData = await registerQuery(values);
+
+  const data = mapUserToResponse(registerData);
+  const token = generateJwtToken(data.id);
+
+  const result = await rotateRefreshToken(data.id!);
+  if (typeof result !== "string") {
+    return sendError(res, result.message, undefined, result.statusCode);
   }
-};
 
-const login = async (req: Request, res: Response) => {
-  try {
-    // Check if the account exist
-    const { email, password } = req.body;
-    const user = await findUserByEmailQuery(email);
-    if (!user.length) {
-      return res
-        .status(400)
-        .json({ statusCode: 0, message: "Account does not exist" });
-    }
+  res.cookie("refresh_token", result, {
+    httpOnly: true,
+    secure: config.app.node_env === "production",
+  });
+  return sendSuccess(res, "Account created", data, 201, 1, { token });
+});
 
-    // Validate the password
-    const isValid = await bcrypt.compare(password, user[0].password);
-    if (!isValid) {
-      return res.status(400).json({ statusCode: 0, message: "Wrong password" });
-    }
+const login = asyncHandler(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
 
-    // Generate a token
-    const token = jwt.sign(
-      { id: user[0].id },
-      process.env.JWT_SECRET! || "secret",
-      {
-        expiresIn: "1h",
-      }
+  const user = await findUserByEmailQuery(email, true);
+  if (!user) return sendError(res, "Account does not exist", undefined, 400);
+
+  const isValid = compareHash(password, user.password!);
+  if (!isValid) return sendError(res, "Wrong password", undefined, 400);
+
+  if (user.is_mfa_enabled) {
+    const temporary_token = generateJwtToken(user.id!, "5m");
+    return sendSuccess(
+      res,
+      "MFA required. Please proceed to the next step to verify your identity.",
+      undefined,
+      200,
+      1,
+      { temporary_token, mfa_method: user.mfa_method }
     );
-    res
-      .status(200)
-      .json({ statusCode: 1, message: "Logged In Successfully", token });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ statusCode: 0, message: "Something went wrong", error });
   }
-};
 
-// Request an email for the user then add resetToken to be used to reset the password
-const forgotPassword = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
-    const user = await findUserByEmailQuery(email);
-    if (!user.length) {
-      return res.status(404).json({
-        statusCode: 0,
-        message: "No user found with this email address",
-      });
-    }
+  const token = generateJwtToken(user.id!);
+  const data = mapUserToResponse(user);
 
-    // GENERATE A TOKEN
-    const token = nanoid();
-    const expiry = new Date(Date.now() + 3600000).toISOString(); // 1hr
-
-    // STORE IT IN THE DATABASE
-    await storeResetTokenQuery(user[0].id, token, expiry);
-
-    // Handle Sending Email
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: "jmmunda26@gmail.com",
-        pass: "lezm wehb psbg fazv",
-      },
-    });
-    const webResetLink = `${process.env.BASE_URL}/reset-password/${token}`;
-    const mobileResetLink = "";
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Password Reset",
-      text: `We received a request to reset your password. To securely proceed, please select the appropriate link below based on your device:\n\n
-    For web user: ${webResetLink}\n
-    For mobile user: ${mobileResetLink}\n
-    If you did not request this, please disregard this email.
-    `,
-    });
-    return res.status(200).json({
-      statusCode: 1,
-      message: "Success! Reset password link has been sent",
-    });
-  } catch (error) {
-    console.log("Forgot password", error);
-    return res
-      .status(500)
-      .json({ statusCode: 0, message: "Something went wrong", error });
+  const result = await rotateRefreshToken(data.id!);
+  if (typeof result !== "string") {
+    return sendError(res, result.message, undefined, result.statusCode);
   }
-};
 
-// Handles resetting of password in the database
-const resetPassword = async (req: Request, res: Response) => {
-  try {
-    const { resetToken, newPassword } = req.body;
-    // Validate reset token
-    const result = await validateResetTokenQuery(resetToken);
-    if (result.length === 0)
-      return res.status(400).json({ statusCode: 0, message: "Invalid token" });
+  res.cookie("refresh_token", result, {
+    httpOnly: true,
+    secure: config.app.node_env === "production",
+  });
+  return sendSuccess(res, "Logged In Successfully", data, 200, 1, { token });
+});
 
-    // Perform reset password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    await resetPasswordQuery(result[0].user_id, hashedPassword);
+const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const user = await findUserByEmailQuery(email);
+  if (!user) return sendError(res, "No user found with this email address", undefined, 404);
+  const token = nanoid();
+  const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  await storeResetTokenQuery(user.id!, token, expiry);
+  await emailPasswordReset(email, token);
+  return sendSuccess(res, `Success! Reset password link has been sent to ${email}`);
+});
 
-    // Mark token as used
-    await setTokenStatusQuery(resetToken);
-    return res.status(200).json({
-      statusCode: 1,
-      message: "Password has been updated successfully",
-    });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ statusCode: 0, message: "Something went wrong", error });
+const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { reset_token, new_password } = req.body;
+  const result = await validateResetTokenQuery(reset_token);
+  if (result.length === 0) return sendError(res, "Invalid token", undefined, 400);
+  const hashedPassword = await hashPassword(new_password);
+  await resetPasswordQuery(result[0].user_id, hashedPassword);
+  await setTokenStatusQuery(reset_token);
+  return sendError(res, "Password has been updated successfully");
+});
+
+const refreshToken = asyncHandler(async (req: Request, res: Response) => {
+  const { refresh_token } = req.cookies;
+
+  if (!refresh_token) return sendError(res, "No refresh token found", undefined, 401);
+
+  const { isValid, expired, decoded } = verifyJwtToken(refresh_token);
+  if (!isValid) return sendError(res, "Invalid refresh token", undefined, 401);
+  if (expired) return sendError(res, "Refresh token has expired", undefined, 401);
+
+  const userId = decoded?.id;
+  const token = generateJwtToken(userId!);
+
+  // TODO: Separate this into service
+
+  const result = await rotateRefreshToken(userId!);
+  if (typeof result !== "string") {
+    return sendError(res, result.message, undefined, result.statusCode);
   }
-};
 
-export default { register, login, forgotPassword, resetPassword };
+  res.cookie("refresh_token", result, {
+    httpOnly: true,
+    secure: config.app.node_env === "production",
+  });
+  return sendSuccess(res, "Token refreshed", undefined, 200, 1, { token });
+});
+
+export default { register, login, forgotPassword, resetPassword, refreshToken };

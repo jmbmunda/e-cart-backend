@@ -8,6 +8,12 @@ const register = [
     .notEmpty()
     .withMessage("Email is required")
     .escape(),
+  check("mobile_number")
+    .notEmpty()
+    .withMessage("Mobile number is required")
+    .bail()
+    .matches(/^(?:\+639\d{9}|09\d{9})$/)
+    .withMessage("Mobile number must start with 09 or +63 and contain 11 digits"),
   check("password", "Password is required").notEmpty(),
   check("password", "Must be at least 8 characters long").isLength({ min: 8 }),
   check("confirm_password", "Confirm Password is required").notEmpty(),
@@ -32,9 +38,9 @@ const login = [
 const forgotPassword = [check("email", "Email is required").notEmpty()];
 
 const resetPassword = [
-  check("resetToken", "Reset Token is required").notEmpty(),
-  check("newPassword", "New Password is required").notEmpty(),
-  check("newPassword", "Must be at least 8 characters long").isLength({
+  check("reset_token", "Reset Token is required").notEmpty(),
+  check("new_password", "New Password is required").notEmpty(),
+  check("new_password", "Must be at least 8 characters long").isLength({
     min: 8,
   }),
 ];
