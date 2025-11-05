@@ -77,7 +77,7 @@ export const seedProducts = async () => {
     for (const img of pi.images) {
       if (productId) {
         await pool.query(
-          `INSERT INTO product_images (product_id, url, is_thumbnail) VALUES ($1, $2, $3)`,
+          `INSERT INTO product_images (product_id, url, is_thumbnail) VALUES ($1, $2, $3) ON CONFLICT (product_id) WHERE is_thumbnail = TRUE DO NOTHING`,
           [productId, img.url, img.is_thumbnail]
         );
       }

@@ -3,31 +3,27 @@ import productsController from "../controllers/products";
 import productValidator from "../validators/products";
 import validateRequest from "../middlewares/validateRequest";
 import verifyToken from "../middlewares/verifyToken";
+import { authorizeRoles } from "../middlewares/authMiddleware";
 
 const router = express.Router();
+router.use(verifyToken);
 
-router.get(
-  "/",
-  verifyToken,
-  productValidator.getProducts,
-  validateRequest,
-  productsController.getProducts
-);
-router.get("/:id", verifyToken, productsController.getProductById);
+router.get("/", productValidator.getProducts, validateRequest, productsController.getProducts);
+router.get("/:id", productsController.getProductById);
 router.post(
   "/add",
-  verifyToken,
+  authorizeRoles(["seller"]),
   productValidator.addProduct,
   validateRequest,
   productsController.addProduct
 );
 router.put(
   "/edit/:id",
-  verifyToken,
+  authorizeRoles(["seller"]),
   productValidator.editProduct,
   validateRequest,
   productsController.editProduct
 );
-router.delete("/:id", verifyToken, productsController.deleteProduct);
+router.delete("/:id", authorizeRoles(["seller"]), productsController.deleteProduct);
 
 export default router;

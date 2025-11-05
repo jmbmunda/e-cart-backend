@@ -12,6 +12,7 @@ const getFields = (includeSensitive: boolean = false) => {
     "updated_at",
     "mfa_method",
     "mobile_number",
+    "role_id",
   ];
   const sensitiveFields = ["password", "mfa_secret"];
   const fields = includeSensitive ? [...baseFields, ...sensitiveFields] : baseFields;
@@ -32,7 +33,15 @@ export const findUserByEmailQuery = async <T extends boolean = false>(
   includeSensitive?: T
 ): Promise<UserType<T>> => {
   const fields = getFields(includeSensitive);
-  const { rows } = await pool.query(`SELECT ${fields} FROM users WHERE email = $1`, [email]);
+  const { rows } = await pool.query(
+    `SELECT ${fields
+      .map((q) => `u.${q}`)
+      .join(", ")}, json_build_object('id', r.id, 'name', r.name) AS role
+     FROM users u
+     LEFT JOIN roles r ON u.role_id = r.id
+     WHERE email = $1`,
+    [email]
+  );
   return rows[0];
 };
 

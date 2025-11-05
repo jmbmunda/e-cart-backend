@@ -3,6 +3,14 @@ export type PaginationType = {
   limit?: number;
 };
 
+export type RoleType = {
+  id?: string;
+  name: string;
+  description: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type ProductType = {
   sku: string;
   name: string;
@@ -45,6 +53,7 @@ export type BaseUserType = {
   updated_at?: string;
   is_mfa_enabled?: boolean;
   mobile_number?: string;
+  role?: { id: string; name: string };
 };
 
 export type SensitiveUserType = {
@@ -67,3 +76,9 @@ export type MfaTokenType = {
 };
 
 export type MfaMethodType = "authenticator" | "email" | "sms";
+
+export type JWTUserDataType = {
+  id?: string;
+  email?: string;
+  role?: { id: string; name: string };
+};

@@ -61,10 +61,10 @@ const mfaVerify = asyncHandler(async (req: Request, res: Response) => {
   const { message, statusCode, ...meta } = json;
   if (!json.statusCode) return sendSuccess(res, message, undefined, status, statusCode, meta);
 
-  const token = generateJwtToken(user.id!);
+  const token = generateJwtToken(user);
   const data = mapUserToResponse(user);
 
-  const result = await rotateRefreshToken(user.id!);
+  const result = await rotateRefreshToken(user);
   if (typeof result !== "string") {
     return sendError(res, result.message, undefined, result.statusCode);
   }
@@ -72,6 +72,7 @@ const mfaVerify = asyncHandler(async (req: Request, res: Response) => {
   res.cookie("refresh_token", result, {
     httpOnly: true,
     secure: config.app.node_env === "production",
+    sameSite: "lax",
   });
   return sendSuccess(res, "Authenticated", data, 200, 1, { token });
 });
@@ -87,12 +88,7 @@ const otpSend = asyncHandler(async (req: Request, res: Response) => {
   }
   if (!user) return sendError(res, "User not found", undefined, 404);
 
-  const { status, json } = await sendOTPCode({
-    userId: user.id!,
-    method: user.mfa_method!,
-    email: user.email!,
-    mobileNumber: user.mobile_number!,
-  });
+  const { status, json } = await sendOTPCode(user);
   const { statusCode, message, ...meta } = json;
   return sendSuccess(res, message, undefined, status, statusCode, meta);
 });

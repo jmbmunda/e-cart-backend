@@ -24,9 +24,9 @@ app.use(cors({ origin: config.app.cors_origin || true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use(`/api/${API_VERSION}/products`, productsRouter);
 app.use(`/api/${API_VERSION}/auth`, authRouter);
 app.use(`/api/${API_VERSION}/mfa`, mfaRouter);
+app.use(`/api/${API_VERSION}/products`, productsRouter);
 app.use(`/api/${API_VERSION}/categories`, categoriesRouter);
 
 app.use(errorHandler);

@@ -9,6 +9,7 @@ import {
   verifyOtpQuery,
 } from "../../models/mfa";
 import { generateOtp, sendEmail } from "../../utils/helper";
+import { UserType } from "../../utils/types";
 import { generateJwtToken } from "../authService";
 
 const enable = async (id: string) => {
@@ -87,20 +88,20 @@ const verify = async (userId: string, otp: string) => {
   }
 };
 
-const send = async (userId: string, to: string) => {
+const send = async (user: UserType) => {
   const OTP_DURATION_MINUTES = config.otp.duration_ms;
   try {
-    const temporary_token = generateJwtToken(userId, `${OTP_DURATION_MINUTES}m`);
-    const validOtps = await getOtpByUserIdQuery(userId);
+    const temporary_token = generateJwtToken(user, `${OTP_DURATION_MINUTES}m`);
+    const validOtps = await getOtpByUserIdQuery(user.id!);
     if (validOtps?.length === 0) {
       const otp = generateOtp();
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
       sendEmail({
         subject: "E-Cart OTP",
-        emailRecipient: to,
-        text: `Your OTP is ${otp}. It will expire in 5 minutes. Do not share this code with anyone.`,
+        emailRecipient: user.email!,
+        text: `Your OTP is ${otp}. It will expire in ${OTP_DURATION_MINUTES} minutes. Do not share this code with anyone.`,
       });
-      return await saveOTPCode({ userId, tempToken: temporary_token, otp, expiresAt });
+      return await saveOTPCode({ userId: user.id!, tempToken: temporary_token, otp, expiresAt });
     }
 
     return {

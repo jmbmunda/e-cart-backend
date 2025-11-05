@@ -9,6 +9,7 @@ import {
 } from "../../models/mfa";
 import { generateJwtToken } from "../authService";
 import { config } from "../../config/env.config";
+import { UserType } from "../../utils/types";
 
 const enable = async (id: string, email: string, mfa_secret: string) => {
   try {
@@ -63,11 +64,11 @@ const verify = (otp: string, secret: string) => {
   }
 };
 
-const send = async (userId: string) => {
+const send = async (user: UserType) => {
   const OTP_DURATION_MINUTES = config.otp.duration_ms;
 
   try {
-    const temporary_token = generateJwtToken(userId, `${OTP_DURATION_MINUTES}m`);
+    const temporary_token = generateJwtToken(user, `${OTP_DURATION_MINUTES}m`);
     return {
       status: 200,
       json: {

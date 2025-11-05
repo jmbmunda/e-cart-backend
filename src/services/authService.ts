@@ -7,16 +7,18 @@ import {
   storeRefreshTokenQuery,
 } from "../models/auth";
 import { config } from "../config/env.config";
+import { JWTUserDataType, UserType } from "../utils/types";
 
-export const generateJwtToken = (id: string, expiresIn: string = "1h") => {
-  return jwt.sign({ id }, config.token.secret!, {
+export const generateJwtToken = (user: Partial<UserType>, expiresIn: string = "1h") => {
+  const jwtData: JWTUserDataType = { id: user.id, email: user.email, role: user.role };
+  return jwt.sign(jwtData, config.token.secret!, {
     expiresIn: config.token.access_expiry || expiresIn,
   });
 };
 
 export const verifyJwtToken = (token: string) => {
   try {
-    const decoded = jwt.verify(token, config.token.secret!) as jwt.JwtPayload & { id?: string };
+    const decoded = jwt.verify(token, config.token.secret!) as jwt.JwtPayload & JWTUserDataType;
     return { isValid: true, expired: false, decoded };
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
@@ -70,31 +72,33 @@ export const emailPasswordReset = async (
   });
 };
 
-export const generateSaveRefreshToken = async (userId: string) => {
+export const generateSaveRefreshToken = async (user: Partial<UserType>) => {
   // const token = generateRandomToken();
-  const token = generateJwtToken(userId, "7d");
+  const token = generateJwtToken(user, "7d");
   const hashedToken = await bcrypt.hash(token, 10);
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-  await storeRefreshTokenQuery(userId, hashedToken, expiresAt);
+  await storeRefreshTokenQuery(user.id!, hashedToken, expiresAt);
   return token;
 };
 
-export const rotateRefreshToken = async (userId: string) => {
-  const row = await getRefreshTokenByUserIdQuery(userId!);
+export const rotateRefreshToken = async (
+  user: Partial<UserType>,
+  options?: { shouldCheckExpiry?: boolean }
+) => {
+  const row = await getRefreshTokenByUserIdQuery(user.id!);
+  const shouldCheckExpiry = options?.shouldCheckExpiry ?? false;
 
   if (row?.is_revoked) {
     return { statusCode: 401, message: "Refresh token is already used or revoked" };
   }
 
-  if (row?.expires_at < Date.now()) {
+  if (shouldCheckExpiry && row?.expires_at < Date.now()) {
     return { statusCode: 401, message: "Refresh token has expired" };
   }
 
   if (row?.id) await revokeRefreshTokenQuery(row.id);
 
-  const newRefreshToken = await generateSaveRefreshToken(userId!);
+  const newRefreshToken = await generateSaveRefreshToken(user);
   return newRefreshToken;
 };
-
-// MAIN SERVICES (login ,register , refresh token, etc.)

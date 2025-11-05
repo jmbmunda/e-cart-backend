@@ -3,7 +3,7 @@ import qrcode from "qrcode";
 
 import * as totpService from "./totpService";
 import * as emailService from "./emailService";
-import { MfaMethodType } from "../../utils/types";
+import { MfaMethodType, UserType } from "../../utils/types";
 import { saveOtpQuery, updateMfaStatusQuery } from "../../models/mfa";
 
 export const generateMfaSecret = async () => {
@@ -97,22 +97,12 @@ export const deactivateMfa = async ({
   }
 };
 
-export const sendOTPCode = async ({
-  userId,
-  method,
-  email,
-  mobileNumber,
-}: {
-  userId: string;
-  method: MfaMethodType;
-  email: string;
-  mobileNumber: string;
-}) => {
-  switch (method) {
+export const sendOTPCode = async (user: UserType<true>) => {
+  switch (user?.mfa_method) {
     case "authenticator":
-      return await totpService.send(userId);
+      return await totpService.send(user);
     case "email":
-      return await emailService.send(userId, email);
+      return await emailService.send(user);
     // case "sms":
     //   return await smsService.send(userId, mobileNumber);
     default:

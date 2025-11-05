@@ -3,12 +3,13 @@ import verifyToken from "../middlewares/verifyToken";
 import validateRequest from "../middlewares/validateRequest";
 import categoriesValidator from "../validators/categories";
 import categoriesController from "../controllers/categories";
+import { authorizeRoles } from "../middlewares/authMiddleware";
 
 const router = express.Router();
+router.use(verifyToken);
 
 router.get(
   "/",
-  verifyToken,
   categoriesValidator.getCategories,
   validateRequest,
   categoriesController.getCategories
@@ -16,7 +17,7 @@ router.get(
 
 router.post(
   "/add",
-  verifyToken,
+  authorizeRoles(["admin"]),
   categoriesValidator.addCategory,
   validateRequest,
   categoriesController.addCategory
@@ -24,12 +25,12 @@ router.post(
 
 router.put(
   "/edit/:id",
-  verifyToken,
+  authorizeRoles(["admin"]),
   categoriesValidator.editCategory,
   validateRequest,
   categoriesController.editCategory
 );
 
-router.delete("/:id", verifyToken, categoriesController.deleteCategory);
+router.delete("/:id", authorizeRoles(["admin"]), categoriesController.deleteCategory);
 
 export default router;
