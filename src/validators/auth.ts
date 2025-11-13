@@ -1,13 +1,12 @@
 import { body, check } from "express-validator";
 
 const register = [
-  body(["name", "profile_picture"]).notEmpty().escape(),
+  body(["name", "profile_picture"]).notEmpty(),
   body("email")
     .isEmail()
     .withMessage("Please provide a valid email address")
     .notEmpty()
-    .withMessage("Email is required")
-    .escape(),
+    .withMessage("Email is required"),
   check("mobile_number")
     .notEmpty()
     .withMessage("Mobile number is required")

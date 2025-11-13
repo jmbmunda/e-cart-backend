@@ -3,15 +3,19 @@ export class AppError extends Error {
   public status: number;
   public statusCode: number;
 
-  constructor(
-    error: string,
-    message: string = "Something went wrong",
-    status: number = 500,
-    statusCode: number = 0
-  ) {
+  constructor({
+    error,
+    message = "Something went wrong",
+    status = 500,
+    statusCode = 0,
+  }: {
+    error: string;
+    message?: string;
+    status?: number;
+    statusCode?: number;
+  }) {
     super(message);
     this.error = error;
-    this.message = message;
     this.status = status;
     this.statusCode = statusCode;
 

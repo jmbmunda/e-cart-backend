@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 export type PaginationType = {
   page?: number;
   limit?: number;
@@ -7,6 +9,17 @@ export type RoleType = {
   id?: string;
   name: string;
   description: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type CartType = {
+  id?: string;
+  cart_id?: string;
+  product_id?: string;
+  quantity?: number;
+  price?: number;
+  is_selected?: boolean;
   created_at?: string;
   updated_at?: string;
 };
@@ -82,3 +95,5 @@ export type JWTUserDataType = {
   email?: string;
   role?: { id: string; name: string };
 };
+
+export type AuthRequestType = Request & { user: Required<JWTUserDataType> };

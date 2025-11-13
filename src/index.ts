@@ -3,6 +3,7 @@ import helmet from "helmet";
 import productsRouter from "./routers/products";
 import authRouter from "./routers/auth";
 import mfaRouter from "./routers/mfa";
+import cartRouter from "./routers/cart";
 import categoriesRouter from "./routers/categories";
 import dotenv from "dotenv";
 import { globalLimiter } from "./middlewares/rateLimit";
@@ -28,6 +29,7 @@ app.use(`/api/${API_VERSION}/auth`, authRouter);
 app.use(`/api/${API_VERSION}/mfa`, mfaRouter);
 app.use(`/api/${API_VERSION}/products`, productsRouter);
 app.use(`/api/${API_VERSION}/categories`, categoriesRouter);
+app.use(`/api/${API_VERSION}/cart`, cartRouter);
 
 app.use(errorHandler);
 

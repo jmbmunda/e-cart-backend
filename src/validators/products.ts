@@ -2,7 +2,7 @@ import { body, query } from "express-validator";
 import { ALLOWED_ORDERS, ALLOWED_PRODUCT_SORT_FIELDS } from "../utils/constants";
 
 const addProduct = [
-  body(["name", "description", "price", "stock", "category", "thumbnail"]).notEmpty().escape(),
+  body(["name", "description", "price", "stock", "category", "thumbnail"]).notEmpty(),
   body("price").isFloat({ gt: 0 }).toFloat(),
   body("stock").isInt({ min: 0 }).toInt(),
   body("sku")
@@ -12,7 +12,7 @@ const addProduct = [
 ];
 
 const editProduct = [
-  body(["name", "description", "price", "stock", "category", "thumbnail"]).optional().escape(),
+  body(["name", "description", "price", "stock", "category", "thumbnail"]).optional(),
   body("price").optional().isFloat({ gt: 0 }).toFloat(),
   body("stock").optional().isInt({ min: 0 }).toInt(),
   body("sku")
@@ -22,7 +22,7 @@ const editProduct = [
 ];
 
 const getProducts = [
-  query("q").optional().isString().trim().escape(),
+  query("q").optional().isString().trim(),
   query(["min_price", "max_price"]).optional().isFloat({ min: 0 }).toFloat(),
   query("sort_by")
     .optional()

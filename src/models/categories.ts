@@ -1,6 +1,5 @@
 import pool from "../config/db";
-import { AppError } from "../utils/AppError";
-import { PostgresErrorCodes } from "../utils/constants";
+import { mapPostgresError } from "../mappers/pgErrorMapper";
 import { CategoriesFiltersType, CategoryType } from "../utils/types";
 
 export const getCategoriesQuery = async (filters: CategoriesFiltersType) => {
@@ -37,10 +36,7 @@ export const addCategoryQuery = async (data: CategoryType) => {
     );
     return rows[0];
   } catch (error: any) {
-    if (error.code === PostgresErrorCodes.UNIQUE_VIOLATION) {
-      throw new AppError(error, "Category with this slug already exists", 400);
-    }
-    throw new AppError(error);
+    mapPostgresError(error);
   }
 };
 
@@ -53,10 +49,7 @@ export const editCategoryQuery = async (id: string, data: CategoryType) => {
     );
     return rows[0];
   } catch (error: any) {
-    if (error.code === PostgresErrorCodes.UNIQUE_VIOLATION) {
-      throw new AppError(error, "Category with this slug already exists", 400);
-    }
-    throw new AppError(error);
+    mapPostgresError(error);
   }
 };
 
