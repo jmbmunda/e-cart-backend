@@ -1,96 +1,39 @@
 import { Request, Response } from "express";
-import { deactivateMfa, activateMfa, disableMfa, verifyMfa, sendOTPCode } from "../services/mfa";
-import { findUserByEmailQuery, findUserByIdQuery } from "../models/user";
-import { generateJwtToken, rotateRefreshToken, verifyJwtToken } from "../services/authService";
-import { mapUserToResponse } from "../mappers/userMapper";
 import { asyncHandler } from "../middlewares/asyncHandler";
-import { sendError, sendSuccess } from "../utils/helper";
+import { sendSuccess } from "../utils/helper";
 import { config } from "../config/env.config";
+import mfaService from "../services/mfa";
 
-const mfaSetup = asyncHandler(async (req: Request, res: Response) => {
+const handleMfaSetup = asyncHandler(async (req: Request, res: Response) => {
   const { email, is_mfa_enabled, mfa_method } = req.body;
-  const user = await findUserByEmailQuery(email, true);
-  if (!user) return sendError(res, "User not found", undefined, 404);
 
-  if (!is_mfa_enabled) {
-    await disableMfa(user.id!);
-    return sendSuccess(res, "MFA has been disabled");
-  }
-
-  if (is_mfa_enabled && !mfa_method) {
-    return sendError(res, "Please provide mfa method", undefined, 400);
-  }
-
-  if (is_mfa_enabled && user.is_mfa_enabled) {
-    return sendError(res, "MFA is already enabled", undefined, 400);
-  }
-
-  if (!is_mfa_enabled && !user.is_mfa_enabled) {
-    return sendError(res, "MFA is already disabled", undefined, 400);
-  }
-
-  const { status, json } = is_mfa_enabled
-    ? await activateMfa({
-        userId: user.id!,
-        email,
-        method: mfa_method,
-        mfa_secret: user.mfa_secret!,
-      })
-    : await deactivateMfa({ userId: user.id!, method: mfa_method });
-  const { message, statusCode, ...meta } = json;
-  return sendSuccess(res, message, undefined, status, statusCode, meta);
+  const { status, json } = await mfaService.mfaSetup({ email, is_mfa_enabled, mfa_method });
+  return sendSuccess(res, json.message, undefined, status, json.statusCode, json.meta);
 });
 
-const mfaVerify = asyncHandler(async (req: Request, res: Response) => {
+const handleMfaVerify = asyncHandler(async (req: Request, res: Response) => {
   const { code, temporary_token } = req.body;
-  const tempToken = verifyJwtToken(temporary_token);
-  const id = tempToken.decoded?.id;
-  const user = await findUserByIdQuery(id!, true);
 
-  if (tempToken.expired) {
-    return sendError(res, "Session expired, please login again.", undefined, 401);
-  }
-  if (!user) return sendError(res, "User not found", undefined, 404);
+  const result = await mfaService.mfaVerify({ temporary_token, code });
+  const { refresh_token, data, token, statusCode, meta, message } = result.json;
 
-  const { status, json } = await verifyMfa({
-    userId: user.id!,
-    otp: code,
-    method: user.mfa_method!,
-    secret: user.mfa_secret!,
-  });
-  const { message, statusCode, ...meta } = json;
-  if (!json.statusCode) return sendSuccess(res, message, undefined, status, statusCode, meta);
-
-  const token = generateJwtToken(user);
-  const data = mapUserToResponse(user);
-
-  const result = await rotateRefreshToken(user);
-  if (typeof result !== "string") {
-    return sendError(res, result.message, undefined, result.statusCode);
+  if (refresh_token) {
+    res.cookie("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: config.app.node_env === "production",
+      sameSite: "lax",
+    });
   }
 
-  res.cookie("refresh_token", result, {
-    httpOnly: true,
-    secure: config.app.node_env === "production",
-    sameSite: "lax",
-  });
-  return sendSuccess(res, "Authenticated", data, 200, 1, { token });
+  return sendSuccess(res, message, data, result.status, statusCode, { token, ...meta });
 });
 
-const otpSend = asyncHandler(async (req: Request, res: Response) => {
+const handleOtpSend = asyncHandler(async (req: Request, res: Response) => {
   const { temporary_token } = req.body;
-  const tempToken = verifyJwtToken(temporary_token);
-  const id = tempToken.decoded?.id;
-  const user = await findUserByIdQuery(id!, true);
 
-  if (tempToken.expired) {
-    return sendError(res, "Session expired, please login again.", undefined, 401);
-  }
-  if (!user) return sendError(res, "User not found", undefined, 404);
-
-  const { status, json } = await sendOTPCode(user);
-  const { statusCode, message, ...meta } = json;
-  return sendSuccess(res, message, undefined, status, statusCode, meta);
+  const result = await mfaService.sendOtp({ temporary_token });
+  const { message, statusCode, meta } = result.json;
+  return sendSuccess(res, message, undefined, result.status, statusCode, meta);
 });
 
-export default { mfaSetup, mfaVerify, otpSend };
+export default { handleMfaSetup, handleMfaVerify, handleOtpSend };

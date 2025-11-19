@@ -1,5 +1,12 @@
 import { Request } from "express";
 
+export type BaseJsonType = { statusCode: number; message: string };
+
+export type ResponseType<T extends BaseJsonType = BaseJsonType> = {
+  status: number;
+  json: T;
+};
+
 export type PaginationType = {
   page?: number;
   limit?: number;
@@ -34,14 +41,23 @@ export type ProductType = {
   thumbnail: string;
 };
 
-export type CategoryType = {
-  id?: string;
+export type ProductDetailsType = {
+  id: number;
+  sku: string;
   name: string;
-  slug: string;
-  is_active?: boolean;
-  thumbnail?: string;
-  created_at?: string;
-  updated_at?: string;
+  description: string;
+  price: string;
+  stock: number;
+  category: string;
+  thumbnail: string;
+  created_at: string;
+  updated_at: string;
+  images: Array<{
+    id: number;
+    url: string;
+    is_thumbnail: boolean;
+  }>;
+  categories: Array<Pick<CategoryType, "id" | "name" | "slug">>;
 };
 
 export type ProductFiltersType = {
@@ -51,6 +67,16 @@ export type ProductFiltersType = {
   sort_by?: "name" | "price" | "created_at";
   order?: "asc" | "desc";
 } & PaginationType;
+
+export type CategoryType = {
+  id?: string;
+  name: string;
+  slug: string;
+  is_active?: boolean;
+  thumbnail?: string;
+  created_at?: string;
+  updated_at?: string;
+};
 
 export type CategoriesFiltersType = {
   is_active?: boolean;

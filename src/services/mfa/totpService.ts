@@ -1,5 +1,4 @@
 import { authenticator } from "otplib";
-import { generateMfaSecret, generateQRCodeUrl } from ".";
 import pool from "../../config/db";
 import {
   deleteMfaSecretQuery,
@@ -7,20 +6,21 @@ import {
   updateMfaMethodQuery,
   updateMfaStatusQuery,
 } from "../../models/mfa";
-import { generateJwtToken } from "../authService";
+import authService from "../auth";
 import { config } from "../../config/env.config";
 import { UserType } from "../../utils/types";
+import mfaService from ".";
 
 const enable = async (id: string, email: string, mfa_secret: string) => {
   try {
     let secret = mfa_secret;
     await pool.query("BEGIN");
     if (!mfa_secret) {
-      const newSecret = await generateMfaSecret();
+      const newSecret = await mfaService.generateMfaSecret();
       await saveMfaSecretQuery(id, secret);
       secret = newSecret;
     }
-    const qrCodeUrl = await generateQRCodeUrl(email, secret);
+    const qrCodeUrl = await mfaService.generateQRCodeUrl(email, secret);
     await updateMfaMethodQuery(id, "authenticator");
     await updateMfaStatusQuery(id, true);
     await pool.query("COMMIT");
@@ -68,7 +68,7 @@ const send = async (user: UserType) => {
   const OTP_DURATION_MINUTES = config.otp.duration_ms;
 
   try {
-    const temporary_token = generateJwtToken(user, `${OTP_DURATION_MINUTES}m`);
+    const temporary_token = authService.generateJwtToken(user, `${OTP_DURATION_MINUTES}m`);
     return {
       status: 200,
       json: {

@@ -17,17 +17,23 @@ router.post(
   registerLimiter,
   authValidator.register,
   validateRequest,
-  authController.register
+  authController.handleRegister
 );
 
-router.post("/login", loginLimiter, authValidator.login, validateRequest, authController.login);
+router.post(
+  "/login",
+  loginLimiter,
+  authValidator.login,
+  validateRequest,
+  authController.handleLogin
+);
 
 router.post(
   "/forgot-password",
   forgotPasswordLimiter,
   authValidator.forgotPassword,
   validateRequest,
-  authController.forgotPassword
+  authController.handleForgotPassword
 );
 
 router.post(
@@ -35,9 +41,9 @@ router.post(
   passwordResetLimiter,
   authValidator.resetPassword,
   validateRequest,
-  authController.resetPassword
+  authController.handleResetPassword
 );
 
-router.post("/refresh", refreshTokenLimiter, authController.refreshToken);
+router.post("/refresh", refreshTokenLimiter, authController.handleRefreshToken);
 
 export default router;

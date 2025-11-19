@@ -1,39 +1,29 @@
 import { Request, Response } from "express";
-import {
-  addCategoryQuery,
-  deleteCategoryQuery,
-  editCategoryQuery,
-  getCategoriesQuery,
-  getCategoryByIdQuery,
-} from "../models/categories";
 import { asyncHandler } from "../middlewares/asyncHandler";
-import { sendError, sendSuccess } from "../utils/helper";
+import { sendSuccess } from "../utils/helper";
+import categoriesService from "../services/categories";
 
-const getCategories = asyncHandler(async (req: Request, res: Response) => {
+const handleGetCategories = asyncHandler(async (req: Request, res: Response) => {
   const queryParams = req.query;
-  const categories = await getCategoriesQuery(queryParams);
-  return sendSuccess(res, "Success", categories);
+  const { status, json } = await categoriesService.getCategories(queryParams);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
-export const addCategory = asyncHandler(async (req: Request, res: Response) => {
-  const result = await addCategoryQuery(req.body);
-  return sendSuccess(res, "New category has been added", result, 201);
+export const handleAddCategory = asyncHandler(async (req: Request, res: Response) => {
+  const { status, json } = await categoriesService.addCategory(req.body);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
-export const editCategory = asyncHandler(async (req: Request, res: Response) => {
+export const handleEditCategory = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const category = await getCategoryByIdQuery(id);
-  if (!category) return sendError(res, "Category does not exist", undefined, 404);
-  const result = await editCategoryQuery(id, req.body);
-  return sendSuccess(res, "Updated successfully", result);
+  const { status, json } = await categoriesService.editCategory(id, req.body);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
-export const deleteCategory = asyncHandler(async (req: Request, res: Response) => {
+export const handleDeleteCategory = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const category = await getCategoryByIdQuery(id);
-  if (!category) return sendError(res, "Category does not exist", undefined, 404);
-  await deleteCategoryQuery(id);
-  return sendSuccess(res, "Category deleted");
+  const { status, json } = await categoriesService.deleteCategory(id);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
-export default { getCategories, addCategory, editCategory, deleteCategory };
+export default { handleGetCategories, handleAddCategory, handleEditCategory, handleDeleteCategory };

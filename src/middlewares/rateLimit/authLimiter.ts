@@ -29,7 +29,7 @@ export const forgotPasswordLimiter = createLimiter({
 
 export const passwordResetLimiter = createLimiter({
   windowMs: 5 * 60 * 1000,
-  max: 1,
+  max: 3,
   message: {
     status: 429,
     error: "Too many password reset requests",

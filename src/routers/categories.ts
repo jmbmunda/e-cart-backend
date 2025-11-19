@@ -12,7 +12,7 @@ router.get(
   "/",
   categoriesValidator.getCategories,
   validateRequest,
-  categoriesController.getCategories
+  categoriesController.handleGetCategories
 );
 
 router.post(
@@ -20,7 +20,7 @@ router.post(
   authorizeRoles(["admin"]),
   categoriesValidator.addCategory,
   validateRequest,
-  categoriesController.addCategory
+  categoriesController.handleAddCategory
 );
 
 router.put(
@@ -28,9 +28,9 @@ router.put(
   authorizeRoles(["admin"]),
   categoriesValidator.editCategory,
   validateRequest,
-  categoriesController.editCategory
+  categoriesController.handleEditCategory
 );
 
-router.delete("/:id", authorizeRoles(["admin"]), categoriesController.deleteCategory);
+router.delete("/:id", authorizeRoles(["admin"]), categoriesController.handleDeleteCategory);
 
 export default router;

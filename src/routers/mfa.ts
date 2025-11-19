@@ -6,8 +6,14 @@ import verifyToken from "../middlewares/verifyToken";
 
 const router = express.Router();
 
-router.post("/setup", verifyToken, mfaValidator.setup, validateRequest, mfaController.mfaSetup);
-router.post("/verify", mfaValidator.verify, validateRequest, mfaController.mfaVerify);
-router.post("/otp/send", mfaValidator.send, validateRequest, mfaController.otpSend);
+router.post(
+  "/setup",
+  verifyToken,
+  mfaValidator.setup,
+  validateRequest,
+  mfaController.handleMfaSetup
+);
+router.post("/verify", mfaValidator.verify, validateRequest, mfaController.handleMfaVerify);
+router.post("/otp/send", mfaValidator.send, validateRequest, mfaController.handleOtpSend);
 
 export default router;

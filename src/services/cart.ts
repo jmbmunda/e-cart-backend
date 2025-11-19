@@ -1,5 +1,5 @@
-import pool from "../../config/db";
-import { mapPostgresError } from "../../mappers/pgErrorMapper";
+import pool from "../config/db";
+import { mapPostgresError } from "../mappers/pgErrorMapper";
 import {
   addCartItemQuery,
   createCartQuery,
@@ -8,8 +8,8 @@ import {
   getCartItemsQuery,
   removeAllCartItemsQuery,
   removeCartItemQuery,
-} from "../../models/cart";
-import { CartType } from "../../utils/types";
+} from "../models/cart";
+import { CartType } from "../utils/types";
 
 const addToCart = async (
   userId: string,

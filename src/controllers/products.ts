@@ -1,55 +1,48 @@
 import { Request, Response } from "express";
-import {
-  addProductQuery,
-  deleteProductQuery,
-  editProductQuery,
-  getProductByIdQuery,
-  getProductsQuery,
-} from "../models/products";
 import { ProductFiltersType } from "../utils/types";
-import { generateSKU, sendError, sendSuccess } from "../utils/helper";
+import { sendError, sendSuccess } from "../utils/helper";
 import { asyncHandler } from "../middlewares/asyncHandler";
+import productsService from "../services/products";
 
-const getProducts = asyncHandler(async (req: Request, res: Response) => {
+const handleGetProducts = asyncHandler(async (req: Request, res: Response) => {
   const queryParams = req.query as unknown as ProductFiltersType;
-  const products = await getProductsQuery(queryParams);
-  return sendSuccess(res, undefined, products);
+  const { status, json } = await productsService.getAllProducts(queryParams);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
-const getProductById = asyncHandler(async (req: Request, res: Response) => {
+const handleGetProductById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const data = await getProductByIdQuery(id);
-  if (!data) return sendError(res, "Product does not exist", undefined, 404);
-  return sendSuccess(res, "Success", data);
+
+  const { status, json } = await productsService.getProductById(id);
+  const { statusCode, message, data } = json;
+
+  if (statusCode === 0) {
+    return sendError(res, message, undefined, status, statusCode);
+  }
+  return sendSuccess(res, message, data, status, statusCode);
 });
 
-const addProduct = asyncHandler(async (req: Request, res: Response) => {
-  const prefix = req?.body?.name?.substring(0, 3)?.toUpperCase() || "ECP";
-  const sku = req?.body?.sku ?? generateSKU(prefix);
-  const data = await addProductQuery({ ...req.body, sku });
-  return sendSuccess(res, "Your product has been added!", data, 201);
+const handleAddProduct = asyncHandler(async (req: Request, res: Response) => {
+  const { status, json } = await productsService.addProduct(req.body);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
-const editProduct = asyncHandler(async (req: Request, res: Response) => {
+const handleEditProduct = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const product = await getProductByIdQuery(id);
-  if (!product) return sendError(res, "Product does not exist", undefined, 404);
-  const data = await editProductQuery(id, req.body);
-  return sendSuccess(res, "Updated successfully", data);
+  const { status, json } = await productsService.editProduct(id, req.body);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
-const deleteProduct = asyncHandler(async (req: Request, res: Response) => {
+const handleDeleteProduct = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const product = await getProductByIdQuery(id);
-  if (!product) return sendError(res, "Product does not exist", undefined, 404);
-  await deleteProductQuery(id);
-  return sendSuccess(res, "Product deleted");
+  const { status, json } = await productsService.deleteProduct(id);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
 export default {
-  getProducts,
-  getProductById,
-  addProduct,
-  editProduct,
-  deleteProduct,
+  handleGetProducts,
+  handleGetProductById,
+  handleAddProduct,
+  handleEditProduct,
+  handleDeleteProduct,
 };

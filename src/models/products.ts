@@ -1,9 +1,9 @@
 import pool from "../config/db";
 import { ALLOWED_ORDERS, ALLOWED_PRODUCT_SORT_FIELDS } from "../utils/constants";
-import { ProductFiltersType, ProductType } from "../utils/types";
+import { ProductDetailsType, ProductFiltersType, ProductType } from "../utils/types";
 
-export const getProductsQuery = async (filters: ProductFiltersType) => {
-  const { q, min_price, max_price, sort_by, order = "desc", page = 1, limit = 10 } = filters;
+export const getProductsQuery = async (filters?: ProductFiltersType) => {
+  const { q, min_price, max_price, sort_by, order = "desc", page = 1, limit = 10 } = filters || {};
   let query = `SELECT * FROM products WHERE 1=1`;
   const queryParams: any[] = [];
   if (q) {
@@ -29,7 +29,7 @@ export const getProductsQuery = async (filters: ProductFiltersType) => {
   return rows;
 };
 
-export const getProductByIdQuery = async (id: string) => {
+export const getProductByIdQuery = async (id: string): Promise<ProductDetailsType> => {
   const { rows } = await pool.query(
     `SELECT p.*,
     (SELECT COALESCE(
@@ -85,6 +85,6 @@ export const editProductQuery = async (id: string, data: ProductType) => {
 };
 
 export const deleteProductQuery = async (id: string) => {
-  const { rows } = await pool.query("DELETE FROM products WHERE id = $1", [id]);
-  return rows;
+  const { rows } = await pool.query("DELETE FROM products WHERE id = $1 RETURNING id", [id]);
+  return rows[0];
 };

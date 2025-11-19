@@ -31,7 +31,7 @@ const login = [
   check("email", "Email is required").notEmpty(),
   check("email", "Please provide a valid email address").isEmail(),
   check("password", "Password is required").notEmpty(),
-  check("password", "Must be at least 8 characters").isLength({ min: 8 }),
+  check("password", "Must be at least 8 characters").customSanitizer(String).isLength({ min: 8 }),
 ];
 
 const forgotPassword = [check("email", "Email is required").notEmpty()];

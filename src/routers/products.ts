@@ -8,22 +8,27 @@ import { authorizeRoles } from "../middlewares/authMiddleware";
 const router = express.Router();
 router.use(verifyToken);
 
-router.get("/", productValidator.getProducts, validateRequest, productsController.getProducts);
-router.get("/:id", productsController.getProductById);
+router.get(
+  "/",
+  productValidator.getProducts,
+  validateRequest,
+  productsController.handleGetProducts
+);
+router.get("/:id", productsController.handleGetProductById);
 router.post(
   "/add",
   authorizeRoles(["seller"]),
   productValidator.addProduct,
   validateRequest,
-  productsController.addProduct
+  productsController.handleAddProduct
 );
 router.put(
   "/edit/:id",
   authorizeRoles(["seller"]),
   productValidator.editProduct,
   validateRequest,
-  productsController.editProduct
+  productsController.handleEditProduct
 );
-router.delete("/:id", authorizeRoles(["seller"]), productsController.deleteProduct);
+router.delete("/:id", authorizeRoles(["seller"]), productsController.handleDeleteProduct);
 
 export default router;

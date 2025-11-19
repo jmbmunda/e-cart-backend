@@ -27,6 +27,11 @@ export const getCategoryByIdQuery = async (id: string) => {
   return rows[0];
 };
 
+export const getCategoryBySlugQuery = async (slug: string) => {
+  const { rows } = await pool.query("SELECT * FROM categories WHERE slug = $1", [slug]);
+  return rows[0];
+};
+
 export const addCategoryQuery = async (data: CategoryType) => {
   try {
     const { name, slug, is_active, thumbnail } = data;
