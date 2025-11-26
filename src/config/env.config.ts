@@ -20,6 +20,8 @@ const envShema = z.object({
   NODE_MAILER_EMAIL_FROM: z.email(),
   BASE_URL: z.string(),
   CORS_ORIGIN: z.string().optional(),
+  REDIS_HOST: z.string().default("localhost"),
+  REDIS_PORT: z.coerce.number().default(6379),
 });
 
 const parseEnv = () => {
@@ -68,5 +70,9 @@ export const config = {
   },
   otp: {
     duration_ms: env?.OTP_DURATION_MS,
+  },
+  redis: {
+    host: env?.REDIS_HOST,
+    port: env?.REDIS_PORT,
   },
 };

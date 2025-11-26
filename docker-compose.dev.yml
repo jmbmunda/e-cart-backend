@@ -10,21 +10,28 @@ services:
       - /app/node_modules
     depends_on:
       - db
+      - redis
     env_file:
       - .env
     environment:
-      - NODE_ENV=development
-      - PORT=${PORT}
+      NODE_ENV: development
+      PORT: ${PORT}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
 
   worker:
     build: .
     command: ["npm", "run", "start:worker"]
     depends_on:
       - db
+      - redis
     env_file:
       - .env
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
 
   db:
     image: postgres:15
@@ -49,5 +56,11 @@ services:
     volumes:
       - ./db/migrations:/db/migrations
 
+  redis:
+    image: redis:7
+    volumes:
+      - redis_data_dev:/data
+
 volumes:
   pgdata:
+  redis_data_dev:

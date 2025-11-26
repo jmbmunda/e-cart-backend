@@ -16,6 +16,10 @@ logs:
 clean:
 	docker-compose -f docker-compose.dev.yml down --volumes --remove-orphans
 
+# Redis
+redis-cli:
+	docker-compose -f docker-compose.dev.yml exec redis redis-cli
+
 # Migration Commands
 
 migrate:

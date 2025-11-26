@@ -72,7 +72,7 @@ export const addProductQuery = async ({
     "INSERT INTO products (sku, name, description, price, stock, category, thumbnail) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
     [sku, name, description, price, stock, category, thumbnail]
   );
-  return rows;
+  return rows[0];
 };
 
 export const editProductQuery = async (id: string, data: ProductType) => {
@@ -81,7 +81,7 @@ export const editProductQuery = async (id: string, data: ProductType) => {
     "UPDATE products SET name = COALESCE($1, name), description = COALESCE($2, description), price = COALESCE($3, price), stock = COALESCE($4, stock), category = COALESCE($5, category), thumbnail = COALESCE($6, thumbnail), sku = COALESCE($7, sku) WHERE id = $8 RETURNING *",
     [name, description, price, stock, category, thumbnail, sku, id]
   );
-  return rows;
+  return rows[0];
 };
 
 export const deleteProductQuery = async (id: string) => {

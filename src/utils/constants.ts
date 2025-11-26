@@ -13,3 +13,9 @@ export const PostgresErrorCodes = {
   NUMERIC_VALUE_OUT_OF_RANGE: "22003",
   STRING_DATA_RIGHT_TRUNCATION: "22001",
 } as const;
+
+export const TTL = {
+  CART: 60 * 60,
+  PRODUCTS: 60 * 5,
+  CATEGORIES: 60 * 60 * 24,
+};

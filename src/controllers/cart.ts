@@ -6,32 +6,34 @@ import cartService from "../services/cart";
 
 const handleGetCart = asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as AuthRequestType).user.id;
-  const { message, data } = await cartService.getCartItems(userId);
-  return sendSuccess(res, message, data);
+  const { status, json } = await cartService.getCartItems(userId);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
 const handleAddCartItem = asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as AuthRequestType).user.id;
-  const row = await cartService.addToCart(userId, req.body);
-  return sendSuccess(res, "Item added", row);
+  const { status, json } = await cartService.addToCart(userId, req.body);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
 const handleEditCartItem = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { status, message, data } = await cartService.updateCartItem(id, req.body);
-  return sendSuccess(res, message, data, status);
+  const userId = (req as AuthRequestType).user.id;
+  const { status, json } = await cartService.updateCartItem(id, userId, req.body);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
 export const handleDeleteCartItem = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { message, data } = await cartService.deleteCartItem(id);
-  return sendSuccess(res, message, data);
+  const userId = (req as AuthRequestType).user.id;
+  const { status, json } = await cartService.deleteCartItem(id, userId);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
 export const handleClearCart = asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as AuthRequestType).user.id;
-  const { message } = await cartService.clearCartItems(userId);
-  return sendSuccess(res, message);
+  const { status, json } = await cartService.clearCartItems(userId);
+  return sendSuccess(res, json.message, undefined, status, json.statusCode);
 });
 
 export default {

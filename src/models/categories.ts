@@ -2,8 +2,12 @@ import pool from "../config/db";
 import { mapPostgresError } from "../mappers/pgErrorMapper";
 import { CategoriesFiltersType, CategoryType } from "../utils/types";
 
-export const getCategoriesQuery = async (filters: CategoriesFiltersType) => {
-  const { is_active, order = "desc", page = 1, limit = 10 } = filters;
+export const getCategoriesQuery = async ({
+  is_active,
+  order = "desc",
+  page = 1,
+  limit = 10,
+}: CategoriesFiltersType) => {
   let query = `SELECT * FROM categories`;
   let queryParams = [];
 

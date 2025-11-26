@@ -10,8 +10,11 @@ services:
     environment:
       NODE_ENV: production
       PORT: ${PORT}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     depends_on:
       - db
+      - redis
 
   worker:
     build:
@@ -20,10 +23,13 @@ services:
     command: ["npm", "run", "start:worker"]
     environment:
       NODE_ENV: production
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     env_file:
       - .env.production
     depends_on:
       - db
+      - redis
   
   db:
     image: postgres:15
@@ -44,6 +50,13 @@ services:
       - ./db/migrations:/db/migrations
     depends_on:
       - db
-      
+    
+  redis:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data_prod:/data
+
 volumes:
   pgdata:
+  redis_data_prod:

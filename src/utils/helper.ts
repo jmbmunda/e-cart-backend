@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
-import nodemailer from "nodemailer";
+import nodemailer, { SendMailOptions } from "nodemailer";
 import { nanoid } from "nanoid";
 import { Response } from "express";
 import { config } from "../config/env.config";
@@ -46,13 +46,15 @@ export const generateResponse = ({
   };
 };
 
-export const sendEmail = async (emailConfig: {
-  service?: string;
-  from?: string;
-  emailRecipient: string;
-  subject: string;
-  text: string;
-}) => {
+export const sendEmail = async (
+  emailConfig: {
+    service?: string;
+    from?: string;
+    emailRecipient: string;
+    subject: string;
+    text: string;
+  } & SendMailOptions
+) => {
   try {
     const transporter = nodemailer.createTransport({
       service: emailConfig?.service ?? "gmail",
@@ -64,8 +66,7 @@ export const sendEmail = async (emailConfig: {
     await transporter.sendMail({
       from: emailConfig?.from ?? `E-Cart <${config.mailer.user}>`,
       to: emailConfig.emailRecipient,
-      subject: emailConfig.subject,
-      text: emailConfig.text,
+      ...emailConfig,
     });
   } catch (error) {
     throw error;
