@@ -4,6 +4,8 @@ import nodemailer, { SendMailOptions } from "nodemailer";
 import { nanoid } from "nanoid";
 import { Response } from "express";
 import { config } from "../config/env.config";
+import { mapPostgresError } from "../mappers/pgErrorMapper";
+import pool from "../config/db";
 
 export const generateOtp = () => {
   return crypto.randomInt(100000, 999999).toString();
@@ -93,4 +95,35 @@ export const sendError = (
   meta: Record<string, any> = {}
 ) => {
   return res.status(status).json({ statusCode, message, ...meta, error });
+};
+
+export const makeCacheKey = (
+  entity: string,
+  scope: "item" | "list",
+  params?: Record<string, any>
+) => {
+  if (scope === "item") {
+    if (!params?.id) throw new Error("id is required");
+    return `${entity}:item:${params.id}`;
+  }
+
+  if (!params || Object.keys(params).length === 0) return `${entity}:list:all`;
+
+  const sortedParams = Object.keys(params)
+    .sort()
+    .reduce((acc, key) => {
+      acc[key] = params[key];
+      return acc;
+    }, {} as Record<string, any>);
+
+  return `${entity}:list:${JSON.stringify(sortedParams)}`;
+};
+
+export const safeQuery = async <T>(query: string, params: any[]): Promise<T> => {
+  try {
+    const { rows } = await pool.query(query, params);
+    return rows as T;
+  } catch (error) {
+    mapPostgresError(error);
+  }
 };

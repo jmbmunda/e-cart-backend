@@ -9,7 +9,7 @@ export class AppError extends Error {
     status = 500,
     statusCode = 0,
   }: {
-    error: string;
+    error?: string;
     message?: string;
     status?: number;
     statusCode?: number;

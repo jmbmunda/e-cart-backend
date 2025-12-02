@@ -8,17 +8,17 @@ import {
 } from "../models/categories";
 import cache from "../utils/cache";
 import { TTL } from "../utils/constants";
+import { makeCacheKey } from "../utils/helper";
 import { CategoriesFiltersType, CategoryType } from "../utils/types";
 
 const getCategories = async (queryParams: CategoriesFiltersType) => {
-  const cacheKey = `categories:all`;
-  const cached = await cache.get(cacheKey);
-  if (cached) {
-    await cache.expire(cacheKey, TTL.CATEGORIES);
-    return { status: 200, json: { statusCode: 1, message: "Success", data: cached } };
-  }
+  const cacheKey = makeCacheKey("categories", "list", queryParams);
+  const categories = await cache.getOrFetch(cacheKey, () => getCategoriesQuery(queryParams), {
+    shouldSetCache: false,
+    ttl: TTL.CATEGORIES,
+    ttlStrategy: "sliding",
+  });
 
-  const categories = await getCategoriesQuery(queryParams);
   return { status: 200, json: { statusCode: 1, message: "Success", data: categories } };
 };
 
@@ -33,8 +33,7 @@ const addCategory = async (data: Omit<CategoryType, "id" | "created_at" | "updat
 
   const result = await addCategoryQuery(data);
 
-  const categories = await getCategoriesQuery({});
-  await cache.set("categories:all", categories, TTL.CATEGORIES);
+  await cache.delPrefix("categories:list");
 
   return {
     status: 201,
@@ -61,8 +60,7 @@ const editCategory = async (
 
   const result = await editCategoryQuery(id, data);
 
-  const categories = await getCategoriesQuery({});
-  await cache.set("categories:all", categories, TTL.CATEGORIES);
+  await cache.delPrefix("categories:list");
 
   return { status: 200, json: { statusCode: 1, message: "Updated successfully", data: result } };
 };
@@ -74,8 +72,7 @@ const deleteCategory = async (id: string) => {
   }
   const deleteId = await deleteCategoryQuery(id);
 
-  const categories = await getCategoriesQuery({});
-  await cache.set("categories:all", categories, TTL.CATEGORIES);
+  await cache.delPrefix("categories:list");
 
   return { status: 200, json: { statusCode: 1, message: "Deleted successfully", data: deleteId } };
 };

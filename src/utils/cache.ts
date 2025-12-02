@@ -20,6 +20,14 @@ const del = async (key: string) => {
   await redis.del(key);
 };
 
+const delPrefix = async (prefix: string) => {
+  const cacheKeys = await redis.keys(`${prefix}*`);
+  if (!cacheKeys || cacheKeys.length === 0) return;
+  for (const key of cacheKeys) {
+    await redis.del(key);
+  }
+};
+
 const expire = async (key: string, ttlSeconds: number) => {
   await redis.expire(key, ttlSeconds);
 };
@@ -27,10 +35,15 @@ const expire = async (key: string, ttlSeconds: number) => {
 const getOrFetch = async <T>(
   key: string,
   fetcher: () => Promise<T>,
-  options?: { shouldSetCache: boolean; ttl?: number }
+  options?: { shouldSetCache: boolean; ttl?: number; ttlStrategy?: "fixed" | "sliding" }
 ): Promise<T> => {
   const data = await redis.get(key);
-  if (data) return JSON.parse(data);
+  if (data) {
+    if (options?.ttlStrategy === "sliding" && options?.ttl) {
+      await redis.expire(key, options?.ttl);
+    }
+    return JSON.parse(data);
+  }
 
   const freshData = await fetcher();
   if (options?.shouldSetCache) {
@@ -41,4 +54,4 @@ const getOrFetch = async <T>(
   return freshData;
 };
 
-export default { ...redis, get, set, del, expire, getOrFetch };
+export default { ...redis, get, set, del, delPrefix, expire, getOrFetch };

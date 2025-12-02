@@ -21,17 +21,25 @@ export type RoleType = {
 };
 
 export type CartType = {
-  id?: string;
-  cart_id?: string;
-  product_id?: string;
-  quantity?: number;
-  price?: number;
+  id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CartItemType = {
+  id: string;
+  cart_id: string;
+  product_id: string;
+  quantity: number;
+  price: number;
   is_selected?: boolean;
   created_at?: string;
   updated_at?: string;
 };
 
 export type ProductType = {
+  id: string;
   sku: string;
   name: string;
   description: string;
@@ -123,3 +131,21 @@ export type JWTUserDataType = {
 };
 
 export type AuthRequestType = Request & { user: Required<JWTUserDataType> };
+
+export type PasswordResetType = {
+  user_id: string;
+  token: string;
+  expires_at: string;
+  used: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type RefreshTokenType = {
+  id: string;
+  user_id: string;
+  token: string;
+  is_revoked: boolean;
+  expires_at: string;
+  created_at?: string;
+};

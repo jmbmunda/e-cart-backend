@@ -18,15 +18,13 @@ const handleAddCartItem = asyncHandler(async (req: Request, res: Response) => {
 
 const handleEditCartItem = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const userId = (req as AuthRequestType).user.id;
-  const { status, json } = await cartService.updateCartItem(id, userId, req.body);
+  const { status, json } = await cartService.updateCartItem(id, req.body);
   return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 
 export const handleDeleteCartItem = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const userId = (req as AuthRequestType).user.id;
-  const { status, json } = await cartService.deleteCartItem(id, userId);
+  const { status, json } = await cartService.deleteCartItem(id);
   return sendSuccess(res, json.message, json.data, status, json.statusCode);
 });
 

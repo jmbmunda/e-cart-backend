@@ -1,7 +1,7 @@
 import pool from "../../src/config/db";
 import { ProductType } from "../../src/utils/types";
 
-const products: ProductType[] = [
+const products: Omit<ProductType, "id">[] = [
   {
     sku: "SKU-IPHONE15-BLK",
     name: "iPhone 15 Pro",

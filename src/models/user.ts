@@ -1,4 +1,4 @@
-import pool from "../config/db";
+import { safeQuery } from "../utils/helper";
 import { UserType } from "../utils/types";
 
 const getFields = (includeSensitive: boolean = false) => {
@@ -24,7 +24,9 @@ export const findUserByIdQuery = async <T extends boolean = false>(
   includeSensitive?: T
 ): Promise<UserType<T>> => {
   const fields = getFields(includeSensitive);
-  const { rows } = await pool.query(`SELECT ${fields.join(", ")} FROM users WHERE id = $1`, [id]);
+  const rows = await safeQuery<UserType[]>(`SELECT ${fields.join(", ")} FROM users WHERE id = $1`, [
+    id,
+  ]);
   return rows[0];
 };
 
@@ -33,7 +35,7 @@ export const findUserByEmailQuery = async <T extends boolean = false>(
   includeSensitive?: T
 ): Promise<UserType<T>> => {
   const fields = getFields(includeSensitive);
-  const { rows } = await pool.query(
+  const rows = await safeQuery<UserType[]>(
     `SELECT ${fields
       .map((q) => `u.${q}`)
       .join(", ")}, json_build_object('id', r.id, 'name', r.name) AS role

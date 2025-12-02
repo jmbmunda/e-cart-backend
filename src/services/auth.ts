@@ -17,11 +17,9 @@ import { findUserByEmailQuery } from "../models/user";
 import { mapUserToResponse } from "../mappers/userMapper";
 import { nanoid } from "nanoid";
 
-const generateJwtToken = (user: Partial<UserType>, expiresIn: string = "1h") => {
+const generateJwtToken = (user: Partial<UserType>, expiresIn: string = "5m") => {
   const jwtData: JWTUserDataType = { id: user.id, email: user.email, role: user.role };
-  return jwt.sign(jwtData, config.token.secret!, {
-    expiresIn: config.token.access_expiry || expiresIn,
-  });
+  return jwt.sign(jwtData, config.token.secret!, { expiresIn });
 };
 
 const verifyJwtToken = (token: string) => {
@@ -95,7 +93,6 @@ const rotateRefreshToken = async (
   options?: { shouldCheckExpiry?: boolean }
 ): Promise<ResponseType<BaseJsonType & { refresh_token: string | null }>> => {
   const row = await getRefreshTokenByUserIdQuery(user.id!);
-  console.log("getRefreshTokenByUserIdQuery", row);
   const shouldCheckExpiry = options?.shouldCheckExpiry ?? false;
 
   if (row?.is_revoked) {
@@ -109,7 +106,7 @@ const rotateRefreshToken = async (
     };
   }
 
-  if (shouldCheckExpiry && row?.expires_at < Date.now()) {
+  if (shouldCheckExpiry && new Date(row?.expires_at).getTime() < Date.now()) {
     return {
       status: 401,
       json: { statusCode: 0, message: "Refresh token has expired", refresh_token: null },
@@ -157,7 +154,7 @@ const login = async ({ email, password }: { email: string; password: string }) =
   const user = await findUserByEmailQuery(email, true);
   if (!user) return { status: 400, json: { statusCode: 0, message: "Account does not exist" } };
 
-  const isValid = compareHash(password, user.password!);
+  const isValid = await compareHash(password, user.password!);
   if (!isValid) return { status: 400, json: { statusCode: 0, message: "Wrong password" } };
 
   if (user.is_mfa_enabled) {
@@ -198,10 +195,9 @@ const refreshToken = async (refreshToken: string) => {
   }
 
   const { isValid, expired, decoded } = verifyJwtToken(refreshToken);
-  if (!isValid) return { status: 401, json: { statusCode: 0, message: "Invalid refresh token" } };
-
   if (expired)
     return { status: 401, json: { statusCode: 0, message: "Refresh token has expired" } };
+  if (!isValid) return { status: 401, json: { statusCode: 0, message: "Invalid refresh token" } };
 
   const userDecoded = { id: decoded?.id, email: decoded?.email, role_id: decoded?.role_id };
   const token = generateJwtToken(userDecoded);

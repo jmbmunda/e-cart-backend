@@ -49,7 +49,6 @@ const handleResetPassword = asyncHandler(async (req: Request, res: Response) => 
 
 const handleRefreshToken = asyncHandler(async (req: Request, res: Response) => {
   const { refresh_token: refreshToken } = req.cookies;
-
   const result = await authService.refreshToken(refreshToken);
   const { refresh_token, message, statusCode, data, token } = result.json;
 

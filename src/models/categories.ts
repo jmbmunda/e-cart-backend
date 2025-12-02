@@ -1,5 +1,4 @@
-import pool from "../config/db";
-import { mapPostgresError } from "../mappers/pgErrorMapper";
+import { safeQuery } from "../utils/helper";
 import { CategoriesFiltersType, CategoryType } from "../utils/types";
 
 export const getCategoriesQuery = async ({
@@ -22,47 +21,42 @@ export const getCategoriesQuery = async ({
     queryParams.length
   }`;
 
-  const { rows } = await pool.query(query, queryParams);
+  const rows = await safeQuery<CategoryType[]>(query, queryParams);
   return rows;
 };
 
 export const getCategoryByIdQuery = async (id: string) => {
-  const { rows } = await pool.query("SELECT * FROM categories WHERE id = $1", [id]);
+  const rows = await safeQuery<CategoryType[]>("SELECT * FROM categories WHERE id = $1", [id]);
   return rows[0];
 };
 
 export const getCategoryBySlugQuery = async (slug: string) => {
-  const { rows } = await pool.query("SELECT * FROM categories WHERE slug = $1", [slug]);
+  const rows = await safeQuery<CategoryType[]>("SELECT * FROM categories WHERE slug = $1", [slug]);
   return rows[0];
 };
 
 export const addCategoryQuery = async (data: CategoryType) => {
-  try {
-    const { name, slug, is_active, thumbnail } = data;
-    const { rows } = await pool.query(
-      `INSERT INTO categories (name, slug, is_active, thumbnail) VALUES ($1, $2, $3, $4) RETURNING *`,
-      [name, slug, is_active, thumbnail]
-    );
-    return rows[0];
-  } catch (error: any) {
-    mapPostgresError(error);
-  }
+  const { name, slug, is_active, thumbnail } = data;
+  const rows = await safeQuery<CategoryType[]>(
+    `INSERT INTO categories (name, slug, is_active, thumbnail) VALUES ($1, $2, $3, $4) RETURNING *`,
+    [name, slug, is_active, thumbnail]
+  );
+  return rows[0];
 };
 
 export const editCategoryQuery = async (id: string, data: CategoryType) => {
-  try {
-    const { name, slug, is_active, thumbnail } = data;
-    const { rows } = await pool.query(
-      `UPDATE categories SET name = COALESCE($1, name), slug = COALESCE($2, slug), is_active = COALESCE($3, is_active), thumbnail = COALESCE($4, thumbnail) WHERE id = $5 RETURNING *`,
-      [name, slug, is_active, thumbnail, id]
-    );
-    return rows[0];
-  } catch (error: any) {
-    mapPostgresError(error);
-  }
+  const { name, slug, is_active, thumbnail } = data;
+  const rows = await safeQuery<CategoryType[]>(
+    `UPDATE categories SET name = COALESCE($1, name), slug = COALESCE($2, slug), is_active = COALESCE($3, is_active), thumbnail = COALESCE($4, thumbnail) WHERE id = $5 RETURNING *`,
+    [name, slug, is_active, thumbnail, id]
+  );
+  return rows[0];
 };
 
 export const deleteCategoryQuery = async (id: string) => {
-  const { rows } = await pool.query("DELETE FROM categories WHERE id = $1 RETURNING id", [id]);
+  const rows = await safeQuery<Pick<CategoryType, "id">[]>(
+    "DELETE FROM categories WHERE id = $1 RETURNING id",
+    [id]
+  );
   return rows[0];
 };

@@ -1,5 +1,5 @@
-import pool from "../config/db";
 import { ALLOWED_ORDERS, ALLOWED_PRODUCT_SORT_FIELDS } from "../utils/constants";
+import { safeQuery } from "../utils/helper";
 import { ProductDetailsType, ProductFiltersType, ProductType } from "../utils/types";
 
 export const getProductsQuery = async (filters?: ProductFiltersType) => {
@@ -25,12 +25,12 @@ export const getProductsQuery = async (filters?: ProductFiltersType) => {
   const offset = (page - 1) * limit;
   queryParams.push(limit, offset);
   query += ` LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length}`;
-  const { rows } = await pool.query(query, queryParams);
+  const rows = await safeQuery<ProductType[]>(query, queryParams);
   return rows;
 };
 
-export const getProductByIdQuery = async (id: string): Promise<ProductDetailsType> => {
-  const { rows } = await pool.query(
+export const getProductByIdQuery = async (id: string) => {
+  const rows = await safeQuery<ProductDetailsType[]>(
     `SELECT p.*,
     (SELECT COALESCE(
     json_agg(
@@ -68,7 +68,7 @@ export const addProductQuery = async ({
   category,
   thumbnail,
 }: ProductType) => {
-  const { rows } = await pool.query(
+  const rows = await safeQuery<ProductType[]>(
     "INSERT INTO products (sku, name, description, price, stock, category, thumbnail) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
     [sku, name, description, price, stock, category, thumbnail]
   );
@@ -77,7 +77,7 @@ export const addProductQuery = async ({
 
 export const editProductQuery = async (id: string, data: ProductType) => {
   const { name, description, price, stock, category, thumbnail, sku } = data;
-  const { rows } = await pool.query(
+  const rows = await safeQuery<ProductType[]>(
     "UPDATE products SET name = COALESCE($1, name), description = COALESCE($2, description), price = COALESCE($3, price), stock = COALESCE($4, stock), category = COALESCE($5, category), thumbnail = COALESCE($6, thumbnail), sku = COALESCE($7, sku) WHERE id = $8 RETURNING *",
     [name, description, price, stock, category, thumbnail, sku, id]
   );
@@ -85,6 +85,9 @@ export const editProductQuery = async (id: string, data: ProductType) => {
 };
 
 export const deleteProductQuery = async (id: string) => {
-  const { rows } = await pool.query("DELETE FROM products WHERE id = $1 RETURNING id", [id]);
+  const rows = await safeQuery<Pick<ProductType, "id">[]>(
+    "DELETE FROM products WHERE id = $1 RETURNING id",
+    [id]
+  );
   return rows[0];
 };

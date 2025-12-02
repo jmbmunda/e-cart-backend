@@ -12,6 +12,7 @@ const envShema = z.object({
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string().min(32),
   ACCESS_TOKEN_EXPIRY: z.string().default("1h"),
+  REFRESH_TOKEN_EXPIRY: z.string().default("7d"),
   OTP_DURATION_MS: z.coerce.number().default(5),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(10000),
@@ -57,6 +58,7 @@ export const config = {
   token: {
     secret: env?.JWT_SECRET,
     access_expiry: env?.ACCESS_TOKEN_EXPIRY,
+    refresh_expiry: env?.REFRESH_TOKEN_EXPIRY,
   },
   rate_limit: {
     window_ms: env?.RATE_LIMIT_WINDOW_MS,

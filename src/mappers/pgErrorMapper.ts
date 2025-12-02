@@ -5,13 +5,13 @@ export function mapPostgresError(error: any): never {
   switch (error.code) {
     case PostgresErrorCodes.FOREIGN_KEY_VIOLATION:
       throw new AppError({
-        error: error.detail || "Invalid reference — related record not found.",
+        error: error.detail || "Invalid reference — related record not found",
         status: 400,
       });
 
     case PostgresErrorCodes.UNIQUE_VIOLATION:
       throw new AppError({
-        error: error.detail || "Duplicate record — this entry already exists.",
+        error: error.detail || "Duplicate record — this entry already exists",
         status: 409,
       });
 
@@ -26,7 +26,7 @@ export function mapPostgresError(error: any): never {
 
     case PostgresErrorCodes.INVALID_TEXT_REPRESENTATION:
       throw new AppError({
-        error: "Invalid input syntax (e.g. invalid UUID or data type).",
+        error: "Invalid input syntax (e.g. invalid UUID or data type)",
         status: 400,
       });
 
@@ -34,9 +34,14 @@ export function mapPostgresError(error: any): never {
       throw new AppError({ error: "Numeric value out of range.", status: 400 });
 
     case PostgresErrorCodes.STRING_DATA_RIGHT_TRUNCATION:
-      throw new AppError({ error: "String value too long for column.", status: 400 });
+      throw new AppError({ error: "String value too long for column", status: 400 });
 
     default:
-      throw new AppError({ error: "Internal database error." });
+      throw new AppError({
+        error: error.error || "Internal database error",
+        message: error.message,
+        status: error.status,
+        statusCode: error.statusCode,
+      });
   }
 }
