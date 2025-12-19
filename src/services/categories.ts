@@ -8,7 +8,7 @@ import {
 } from "../models/categories";
 import cache from "../utils/cache";
 import { TTL } from "../utils/constants";
-import { makeCacheKey } from "../utils/helper";
+import { countRowsQuery, makeCacheKey, paginationObj } from "../utils/helper";
 import { CategoriesFiltersType, CategoryType } from "../utils/types";
 
 const getCategories = async (queryParams: CategoriesFiltersType) => {
@@ -19,7 +19,23 @@ const getCategories = async (queryParams: CategoriesFiltersType) => {
     ttlStrategy: "sliding",
   });
 
-  return { status: 200, json: { statusCode: 1, message: "Success", data: categories } };
+  const totalRecords = await countRowsQuery({
+    table: "cart_items",
+    whereClause: "1=1",
+    params: [],
+  });
+
+  const pagination = paginationObj({
+    page: queryParams?.page || 1,
+    limit: queryParams?.limit || 10,
+    totalRecords,
+    filteredResult: categories.length,
+  });
+
+  return {
+    status: 200,
+    json: { statusCode: 1, message: "Success", data: categories, meta: pagination },
+  };
 };
 
 const addCategory = async (data: Omit<CategoryType, "id" | "created_at" | "updated_at">) => {

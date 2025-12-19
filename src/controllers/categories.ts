@@ -6,7 +6,7 @@ import categoriesService from "../services/categories";
 const handleGetCategories = asyncHandler(async (req: Request, res: Response) => {
   const queryParams = req.query;
   const { status, json } = await categoriesService.getCategories(queryParams);
-  return sendSuccess(res, json.message, json.data, status, json.statusCode);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode, {}, json.meta);
 });
 
 export const handleAddCategory = asyncHandler(async (req: Request, res: Response) => {

@@ -13,24 +13,44 @@ import { getProductByIdQuery } from "../models/products";
 import { AppError } from "../utils/AppError";
 import cache from "../utils/cache";
 import { TTL } from "../utils/constants";
-import { makeCacheKey } from "../utils/helper";
-import { CartItemType } from "../utils/types";
+import { countRowsQuery, makeCacheKey, paginationObj } from "../utils/helper";
+import { CartItemType, PaginationType } from "../utils/types";
 
-const getCartItems = async (userId: string) => {
-  const cacheKey = makeCacheKey("cart", "list");
+const getCartItems = async (queryParams: { userId: string } & Partial<PaginationType>) => {
+  const cacheKey = makeCacheKey("cart", "list", queryParams);
   const cachedItems = await cache.get(cacheKey);
   if (cachedItems) {
     await cache.expire(cacheKey, TTL.CART);
     return { status: 200, json: { statusCode: 1, message: "Success", data: cachedItems } };
   }
 
-  console.log(`🌱 Fetching fresh data`);
-  const cart = await createCartQuery(userId);
-  const cartItems = await getCartItemsQuery(cart.id);
+  const cart = await createCartQuery(queryParams.userId);
+  const cartItems = await getCartItemsQuery({ cartId: cart.id, ...queryParams });
 
   await cache.set(cacheKey, cartItems, TTL.CART);
 
-  return { status: 200, json: { statusCode: 1, message: "Success", data: cartItems } };
+  const totalRecords = await countRowsQuery({
+    table: "cart_items",
+    whereClause: "cart_id = $1",
+    params: [cart.id],
+  });
+
+  const pagination = paginationObj({
+    page: queryParams?.page || 1,
+    limit: queryParams?.limit || 10,
+    totalRecords,
+    filteredResult: cartItems.length,
+  });
+
+  return {
+    status: 200,
+    json: {
+      statusCode: 1,
+      message: "Success",
+      data: cartItems,
+      meta: pagination,
+    },
+  };
 };
 
 const addToCart = async (userId: string, data: Pick<CartItemType, "product_id" | "quantity">) => {
@@ -48,9 +68,7 @@ const addToCart = async (userId: string, data: Pick<CartItemType, "product_id" |
     const newCartItem = await addCartItemQuery({ cart_id, product_id, quantity, price });
     await pool.query("COMMIT");
 
-    const cartItems = await getCartItemsQuery(cart_id);
-    const cacheKey = makeCacheKey("cart", "list");
-    await cache.set(cacheKey, cartItems, TTL.CART);
+    await cache.delPrefix("cart:list");
 
     return { status: 201, json: { statusCode: 1, message: "Item added", data: newCartItem } };
   } catch (error) {
@@ -74,9 +92,7 @@ const updateCartItem = async (id: string, data: Pick<CartItemType, "is_selected"
     resultRow = await editCartItemQuery(id, { is_selected, quantity });
   }
 
-  const cartItems = await getCartItemsQuery(cartItem.cart_id);
-  const cacheKey = makeCacheKey("cart", "list");
-  await cache.set(cacheKey, cartItems, TTL.CART);
+  await cache.delPrefix("cart:list");
 
   return {
     status: 200,
@@ -92,9 +108,7 @@ const deleteCartItem = async (id: string) => {
 
   const deletedId = await removeCartItemQuery(id);
 
-  const cartItems = await getCartItemsQuery(cartItem.cart_id);
-  const cacheKey = makeCacheKey("cart", "list");
-  await cache.set(cacheKey, cartItems, TTL.CART);
+  await cache.delPrefix("cart:list");
 
   return { status: 200, json: { statusCode: 1, message: "Item removed", data: deletedId } };
 };
@@ -103,8 +117,7 @@ const clearCartItems = async (userId: string) => {
   const cart = await createCartQuery(userId);
   await removeAllCartItemsQuery(cart.id);
 
-  const cacheKey = makeCacheKey("cart", "list");
-  await cache.set(cacheKey, [], TTL.CART);
+  await cache.delPrefix("cart:list");
 
   return { status: 200, json: { statusCode: 1, message: "Cart cleared" } };
 };

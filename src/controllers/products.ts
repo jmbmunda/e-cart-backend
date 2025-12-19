@@ -7,7 +7,7 @@ import productsService from "../services/products";
 const handleGetProducts = asyncHandler(async (req: Request, res: Response) => {
   const queryParams = req.query as unknown as ProductFiltersType;
   const { status, json } = await productsService.getAllProducts(queryParams);
-  return sendSuccess(res, json.message, json.data, status, json.statusCode);
+  return sendSuccess(res, json.message, json.data, status, json.statusCode, {}, json.meta);
 });
 
 const handleGetProductById = asyncHandler(async (req: Request, res: Response) => {

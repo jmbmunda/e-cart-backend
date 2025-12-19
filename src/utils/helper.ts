@@ -81,9 +81,10 @@ export const sendSuccess = (
   data: any = undefined,
   status = 200,
   statusCode = 1,
-  meta: Record<string, any> = {}
+  others: Record<string, any> = {},
+  meta?: Record<string, any>
 ) => {
-  return res.status(status).json({ statusCode, message, ...meta, data });
+  return res.status(status).json({ statusCode, message, ...others, data, meta });
 };
 
 export const sendError = (
@@ -126,4 +127,44 @@ export const safeQuery = async <T>(query: string, params: any[]): Promise<T> => 
   } catch (error) {
     mapPostgresError(error);
   }
+};
+
+export const paginationObj = ({
+  page,
+  limit,
+  totalRecords,
+  filteredResult,
+}: {
+  page: number;
+  limit: number;
+  totalRecords: number;
+  filteredResult: number;
+}) => {
+  const numPage = Number(page) || 1;
+  const numLimit = Number(limit) || 10;
+  const numtotal = Number(totalRecords) || 0;
+  const numTotalResult = Number(filteredResult) || 0;
+  const totalPages = Math.ceil(numtotal / numLimit);
+
+  return {
+    page: numPage,
+    limit: numLimit,
+    total_records: numtotal,
+    filtered_result: numTotalResult,
+    total_pages: totalPages,
+  };
+};
+
+export const countRowsQuery = async ({
+  table,
+  whereClause,
+  params,
+}: {
+  table: string;
+  whereClause: string;
+  params: any[];
+}): Promise<number> => {
+  const query = `SELECT COUNT(*) FROM ${table} WHERE ${whereClause}`;
+  const result = await safeQuery<{ count: string }[]>(query, params);
+  return Number(result[0]?.count) || 0;
 };

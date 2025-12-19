@@ -46,4 +46,6 @@ router.post(
 
 router.post("/refresh", refreshTokenLimiter, authController.handleRefreshToken);
 
+router.post("/logout", authController.handleLogout);
+
 export default router;

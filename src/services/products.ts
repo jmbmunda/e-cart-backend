@@ -7,7 +7,7 @@ import {
 } from "../models/products";
 import cache from "../utils/cache";
 import { TTL } from "../utils/constants";
-import { generateSKU, makeCacheKey } from "../utils/helper";
+import { countRowsQuery, generateSKU, makeCacheKey, paginationObj } from "../utils/helper";
 import { ProductFiltersType, ProductType } from "../utils/types";
 
 const getAllProducts = async (queryParams?: ProductFiltersType) => {
@@ -17,7 +17,24 @@ const getAllProducts = async (queryParams?: ProductFiltersType) => {
     ttl: TTL.PRODUCTS,
     ttlStrategy: "sliding",
   });
-  return { status: 200, json: { statusCode: 1, message: "Success", data: products } };
+
+  const totalRecords = await countRowsQuery({
+    table: "products",
+    whereClause: "1=1",
+    params: [],
+  });
+
+  const pagination = paginationObj({
+    page: queryParams?.page || 1,
+    limit: queryParams?.limit || 10,
+    totalRecords,
+    filteredResult: products.length,
+  });
+
+  return {
+    status: 200,
+    json: { statusCode: 1, message: "Success", data: products, meta: pagination },
+  };
 };
 
 const getProductById = async (id: string) => {

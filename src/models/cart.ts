@@ -1,5 +1,5 @@
 import { safeQuery } from "../utils/helper";
-import { CartItemType, CartType } from "../utils/types";
+import { CartItemType, CartType, PaginationType } from "../utils/types";
 
 export const getCartQuery = async (userId: string) => {
   const getCartQuery = `SELECT * FROM carts WHERE user_id = $1`;
@@ -7,12 +7,20 @@ export const getCartQuery = async (userId: string) => {
   return rows[0];
 };
 
-export const getCartItemsQuery = async (cartId: string) => {
-  const getCartItemsQUery = `SELECT ci.id, ci.product_id, p.name, p.sku, p.thumbnail, ci.price, ci.quantity, ci.is_selected
+export const getCartItemsQuery = async ({
+  cartId,
+  page = 1,
+  limit = 10,
+}: { cartId: string } & PaginationType) => {
+  const offset = (page - 1) * limit;
+
+  const query = `SELECT ci.id, ci.product_id, p.name, p.sku, p.thumbnail, ci.price, ci.quantity, ci.is_selected
   FROM cart_items ci
-  JOIN PRODUCTS p ON p.id = ci.product_id
-  WHERE cart_id = $1`;
-  const rows = await safeQuery<CartItemType[]>(getCartItemsQUery, [cartId]);
+  JOIN products p ON p.id = ci.product_id
+  WHERE cart_id = $1 
+  ORDER BY ci.created_at DESC
+  LIMIT $2 OFFSET $3`;
+  const rows = await safeQuery<CartItemType[]>(query, [cartId, limit, offset]);
   return rows;
 };
 

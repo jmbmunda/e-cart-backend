@@ -49,6 +49,7 @@ const handleResetPassword = asyncHandler(async (req: Request, res: Response) => 
 
 const handleRefreshToken = asyncHandler(async (req: Request, res: Response) => {
   const { refresh_token: refreshToken } = req.cookies;
+
   const result = await authService.refreshToken(refreshToken);
   const { refresh_token, message, statusCode, data, token } = result.json;
 
@@ -60,10 +61,24 @@ const handleRefreshToken = asyncHandler(async (req: Request, res: Response) => {
   return sendSuccess(res, message, data, result.status, statusCode, { token });
 });
 
+const handleLogout = asyncHandler(async (req: Request, res: Response) => {
+  const { refresh_token } = req.cookies;
+
+  const { status, json } = await authService.logout(refresh_token);
+
+  res.clearCookie("refresh_token", {
+    httpOnly: true,
+    secure: config.app.node_env === "production",
+    sameSite: "lax",
+  });
+  return sendSuccess(res, json.message, undefined, status, json.statusCode);
+});
+
 export default {
   handleRegister,
   handleLogin,
   handleForgotPassword,
   handleResetPassword,
   handleRefreshToken,
+  handleLogout,
 };

@@ -79,11 +79,9 @@ const emailPasswordReset = async (
 };
 
 const generateSaveRefreshToken = async (user: Partial<UserType>) => {
-  // const token = generateRandomToken();
   const token = generateJwtToken(user, "7d");
   const hashedToken = await bcrypt.hash(token, 10);
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await storeRefreshTokenQuery(user.id!, hashedToken, expiresAt);
   return token;
 };
@@ -95,16 +93,16 @@ const rotateRefreshToken = async (
   const row = await getRefreshTokenByUserIdQuery(user.id!);
   const shouldCheckExpiry = options?.shouldCheckExpiry ?? false;
 
-  if (row?.is_revoked) {
-    return {
-      status: 401,
-      json: {
-        statusCode: 0,
-        message: "Refresh token is already used or revoked",
-        refresh_token: null,
-      },
-    };
-  }
+  // if (row?.is_revoked) {
+  //   return {
+  //     status: 401,
+  //     json: {
+  //       statusCode: 0,
+  //       message: "Refresh token is already used or revoked",
+  //       refresh_token: null,
+  //     },
+  //   };
+  // }
 
   if (shouldCheckExpiry && new Date(row?.expires_at).getTime() < Date.now()) {
     return {
@@ -200,7 +198,7 @@ const refreshToken = async (refreshToken: string) => {
   if (!isValid) return { status: 401, json: { statusCode: 0, message: "Invalid refresh token" } };
 
   const userDecoded = { id: decoded?.id, email: decoded?.email, role_id: decoded?.role_id };
-  const token = generateJwtToken(userDecoded);
+  const token = generateJwtToken(userDecoded, config.token.refresh_expiry);
 
   const result = await rotateRefreshToken(userDecoded, { shouldCheckExpiry: true });
   if (result.json.statusCode === 0) {
@@ -262,6 +260,20 @@ const resetPassword = async ({
   };
 };
 
+const logout = async (refreshToken: string) => {
+  const { decoded } = verifyJwtToken(refreshToken);
+
+  if (decoded?.id) {
+    const row = await getRefreshTokenByUserIdQuery(decoded.id);
+    await revokeRefreshTokenQuery(row.id);
+  }
+
+  return {
+    status: 200,
+    json: { statusCode: 1, message: "Logged out successfully" },
+  };
+};
+
 export default {
   generateJwtToken,
   verifyJwtToken,
@@ -275,4 +287,5 @@ export default {
   refreshToken,
   forgotPassword,
   resetPassword,
+  logout,
 };

@@ -183,8 +183,8 @@ const mfaSetup = async ({
         mfa_secret: user.mfa_secret!,
       })
     : await deactivateMfa({ userId: user.id!, method: mfa_method });
-  const { message, statusCode, ...meta } = json;
-  return { status, json: { message, statusCode, meta } };
+  const { message, statusCode, ...others } = json;
+  return { status, json: { message, statusCode, others } };
 };
 
 const mfaVerify = async ({

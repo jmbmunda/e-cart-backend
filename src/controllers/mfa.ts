@@ -8,7 +8,7 @@ const handleMfaSetup = asyncHandler(async (req: Request, res: Response) => {
   const { email, is_mfa_enabled, mfa_method } = req.body;
 
   const { status, json } = await mfaService.mfaSetup({ email, is_mfa_enabled, mfa_method });
-  return sendSuccess(res, json.message, undefined, status, json.statusCode, json.meta);
+  return sendSuccess(res, json.message, undefined, status, json.statusCode, json.others);
 });
 
 const handleMfaVerify = asyncHandler(async (req: Request, res: Response) => {

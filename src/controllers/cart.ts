@@ -1,13 +1,14 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../middlewares/asyncHandler";
 import { sendSuccess } from "../utils/helper";
-import { AuthRequestType } from "../utils/types";
+import { AuthRequestType, PaginationType } from "../utils/types";
 import cartService from "../services/cart";
 
 const handleGetCart = asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as AuthRequestType).user.id;
-  const { status, json } = await cartService.getCartItems(userId);
-  return sendSuccess(res, json.message, json.data, status, json.statusCode);
+  const queryParams = req.query as unknown as Partial<PaginationType>;
+  const { status, json } = await cartService.getCartItems({ userId, ...queryParams });
+  return sendSuccess(res, json.message, json.data, status, json.statusCode, {}, json.meta);
 });
 
 const handleAddCartItem = asyncHandler(async (req: Request, res: Response) => {
