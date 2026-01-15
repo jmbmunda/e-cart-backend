@@ -3,7 +3,7 @@ import { safeQuery } from "../utils/helper";
 import { ProductDetailsType, ProductFiltersType, ProductType } from "../utils/types";
 
 export const getProductsQuery = async (filters?: ProductFiltersType) => {
-  const { q, min_price, max_price, sort_by, order = "desc", page = 1, limit = 10 } = filters || {};
+  const { q, min_price, max_price, sort_by, order = "desc", page = 1, limit = 10 } = filters ?? {};
   let query = `SELECT * FROM products WHERE 1=1`;
   const queryParams: any[] = [];
   if (q) {

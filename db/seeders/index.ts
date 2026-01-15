@@ -7,6 +7,7 @@ import * as seeder from "./seeder";
     await seeder.seedProducts();
     await seeder.seedCategories();
     await seeder.seedRoles();
+    await seeder.seedOrderStatuses();
     console.log("✅ All seeds completed");
   } catch (error) {
     console.error("❌ Error seeding database: ", error);

@@ -7,7 +7,7 @@ import { BaseJsonType, MfaMethodType, ResponseType, UserType } from "../../utils
 import { saveOtpQuery, updateMfaStatusQuery } from "../../models/mfa";
 import { findUserByEmailQuery, findUserByIdQuery } from "../../models/user";
 import authService from "../../services/auth";
-import { mapUserToResponse } from "../../mappers/userMapper";
+import { mapUserToResponse } from "../../mappers";
 
 const generateMfaSecret = async () => {
   const secret = authenticator.generateSecret();

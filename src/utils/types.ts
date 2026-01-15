@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { ORDER_STATUSES } from "./constants";
 
 export type BaseJsonType = { statusCode: number; message: string };
 
@@ -50,7 +51,7 @@ export type ProductType = {
 };
 
 export type ProductDetailsType = {
-  id: number;
+  id: string;
   sku: string;
   name: string;
   description: string;
@@ -149,3 +150,34 @@ export type RefreshTokenType = {
   expires_at: string;
   created_at?: string;
 };
+
+export type OrderType = {
+  id: string;
+  user_id: string;
+  total_amount: number;
+  status: OrderStatusType;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type OrderItemType = {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  price: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type OrderFiltersType = {
+  q?: string;
+  status?: string;
+  order?: "asc" | "desc";
+} & PaginationType;
+
+export type OrderResponseType = OrderType & {
+  items: Omit<OrderItemType, "id" | "order_id" | "created_at" | "updated_at">;
+};
+
+export type OrderStatusType = keyof typeof ORDER_STATUSES;

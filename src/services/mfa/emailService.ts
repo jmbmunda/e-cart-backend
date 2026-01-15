@@ -98,7 +98,7 @@ const send = async (user: UserType) => {
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
       sendEmail({
         subject: "E-Cart OTP",
-        emailRecipient: user.email!,
+        emailRecipient: user.email,
         text: `Your OTP is ${otp}. It will expire in ${OTP_DURATION_MINUTES} minutes. Do not share this code with anyone.`,
       });
       return await mfaService.saveOTPCode({

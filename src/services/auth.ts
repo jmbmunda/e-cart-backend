@@ -14,7 +14,7 @@ import {
 import { config } from "../config/env.config";
 import { BaseJsonType, JWTUserDataType, ResponseType, UserType } from "../utils/types";
 import { findUserByEmailQuery } from "../models/user";
-import { mapUserToResponse } from "../mappers/userMapper";
+import { mapUserToResponse } from "../mappers";
 import { nanoid } from "nanoid";
 
 const generateJwtToken = (user: Partial<UserType>, expiresIn: string = "5m") => {
@@ -92,17 +92,6 @@ const rotateRefreshToken = async (
 ): Promise<ResponseType<BaseJsonType & { refresh_token: string | null }>> => {
   const row = await getRefreshTokenByUserIdQuery(user.id!);
   const shouldCheckExpiry = options?.shouldCheckExpiry ?? false;
-
-  // if (row?.is_revoked) {
-  //   return {
-  //     status: 401,
-  //     json: {
-  //       statusCode: 0,
-  //       message: "Refresh token is already used or revoked",
-  //       refresh_token: null,
-  //     },
-  //   };
-  // }
 
   if (shouldCheckExpiry && new Date(row?.expires_at).getTime() < Date.now()) {
     return {

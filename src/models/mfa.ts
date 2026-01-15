@@ -1,4 +1,3 @@
-import pool from "../config/db";
 import { safeQuery } from "../utils/helper";
 import { MfaMethodType, MfaTokenType, UserType } from "../utils/types";
 
